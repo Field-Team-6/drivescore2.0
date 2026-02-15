@@ -237,7 +237,43 @@
         }
         .edit-link:hover { text-decoration: underline; }
 
-        /* ===== SCAN AREA ===== */
+        /* ===== CAMERA VIEWFINDER ===== */
+        .viewfinder-container {
+            position: relative;
+            width: 100%;
+            border-radius: var(--radius);
+            overflow: hidden;
+            margin-bottom: 16px;
+            background: #000;
+        }
+        .viewfinder-container video {
+            width: 100%;
+            display: block;
+            border-radius: var(--radius);
+        }
+        .viewfinder-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 3px solid rgba(245, 197, 66, 0.6);
+            border-radius: var(--radius);
+            pointer-events: none;
+        }
+        .viewfinder-hint {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.65);
+            color: var(--white);
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 20px;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* ===== START CAMERA AREA (before camera is active) ===== */
         .scan-area {
             border: 3px dashed var(--gray-200);
             border-radius: var(--radius);
@@ -246,15 +282,10 @@
             margin-bottom: 20px;
             transition: border-color 0.3s, background 0.3s;
             cursor: pointer;
-            position: relative;
         }
         .scan-area:hover {
             border-color: var(--blue-bright);
             background: rgba(58, 123, 213, 0.03);
-        }
-        .scan-area.active {
-            border-color: var(--green-success);
-            background: rgba(39, 174, 96, 0.05);
         }
         .scan-icon { font-size: 3rem; margin-bottom: 12px; }
         .scan-text {
@@ -265,20 +296,27 @@
             margin-bottom: 4px;
         }
         .scan-hint { font-size: 0.85rem; color: var(--gray-600); }
-        .scan-area input[type="file"] {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0;
+
+        /* ===== FALLBACK FILE INPUT ===== */
+        .fallback-upload {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.82rem;
+            color: var(--gray-600);
+        }
+        .fallback-upload a {
+            color: var(--blue-bright);
             cursor: pointer;
+            text-decoration: underline;
         }
 
-        /* ===== IMAGE PREVIEW ===== */
+        /* ===== CAPTURED FRAME PREVIEW ===== */
         .preview-container {
             margin-bottom: 20px;
             text-align: center;
             display: none;
         }
-        .preview-container img {
+        .preview-container img, .preview-container canvas {
             max-width: 100%;
             max-height: 300px;
             border-radius: 8px;
@@ -485,26 +523,42 @@
         <div class="card">
             <div class="card-title"><span class="icon">📷</span> Scan Voter Registration Form</div>
 
-            <div class="scan-area" id="scanArea">
-                <input type="file" id="formImage" accept="image/*" capture="environment" onchange="handleImageCapture(event)">
-                <div class="scan-icon">📄</div>
-                <div class="scan-text">Tap to scan a form</div>
-                <div class="scan-hint">Take a photo or upload an image of the completed voter registration form</div>
+            <!-- Before camera starts -->
+            <div id="scanArea" class="scan-area" onclick="startCamera()">
+                <div class="scan-icon">📷</div>
+                <div class="scan-text">Tap to open camera</div>
+                <div class="scan-hint">Point your phone at the form — no photo saved to your device</div>
             </div>
 
+            <!-- Live camera viewfinder -->
+            <div id="viewfinderContainer" class="viewfinder-container" style="display:none;">
+                <video id="cameraStream" autoplay playsinline></video>
+                <div class="viewfinder-overlay"></div>
+                <div class="viewfinder-hint">Position form in frame</div>
+            </div>
+
+            <!-- Captured frame preview (shown on fallback upload or retry) -->
             <div class="preview-container" id="previewContainer">
-                <img id="previewImage" alt="Scanned form preview">
-                <div class="preview-label">Form captured — ready to extract</div>
+                <canvas id="captureCanvas" style="display:none;"></canvas>
+                <img id="previewImage" alt="Captured frame">
+                <div class="preview-label">Image ready — tap Extract below</div>
             </div>
 
+            <!-- Hidden file input as fallback -->
+            <input type="file" id="fallbackFile" accept="image/*" capture="environment" onchange="handleFallbackUpload(event)" style="display:none;">
+            <div id="fallbackLink" class="fallback-upload" style="display:none;">
+                Or <a onclick="document.getElementById('fallbackFile').click()">upload an image</a> instead
+            </div>
+
+            <!-- Processing overlay -->
             <div class="processing-overlay" id="processingOverlay">
                 <div class="spinner"></div>
                 <div class="processing-text">Reading the form…</div>
-                <div class="processing-subtext">AI is extracting voter information</div>
+                <div class="processing-subtext">This usually takes a few seconds</div>
             </div>
 
-            <button type="button" class="btn btn-scan" id="extractBtn" onclick="extractFormData()" style="display:none;">
-                🤖 Extract Voter Info
+            <button type="button" class="btn btn-scan" id="extractBtn" onclick="captureAndExtract()" style="display:none;">
+                📋 Read This Form
             </button>
 
             <div id="scanError" class="status" style="display:none;"></div>
@@ -632,13 +686,14 @@
     // This SINGLE endpoint handles both OCR extraction and
     // data submission — the "action" field tells it what to do.
     // ============================================================
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwb0g5i_aCmKDmIuG0Tca83ysaH_LRew6HMr_VwUwI6UW_r9taHouDTC3NdFV-NaIra/exec";
+    const GOOGLE_SCRIPT_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
     // ============================================================
 
     // ---- State ----
     let selectedState = "";
     let voterCount = 0;
     let currentImageBase64 = null;
+    let cameraStream = null;
 
     // ---- Set today's date as default ----
     document.addEventListener("DOMContentLoaded", () => {
@@ -648,6 +703,124 @@
         const mm = String(today.getMinutes()).padStart(2, "0");
         document.getElementById("driveTime").value = `${hh}:${mm}`;
     });
+
+    // ================================================================
+    // CAMERA — Live viewfinder using getUserMedia
+    // ================================================================
+    async function startCamera() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
+            });
+
+            cameraStream = stream;
+            const video = document.getElementById("cameraStream");
+            video.srcObject = stream;
+
+            document.getElementById("scanArea").style.display = "none";
+            document.getElementById("viewfinderContainer").style.display = "block";
+            document.getElementById("extractBtn").style.display = "block";
+            document.getElementById("fallbackLink").style.display = "block";
+
+        } catch (err) {
+            console.log("Camera not available:", err.message);
+            document.getElementById("scanArea").style.display = "none";
+            document.getElementById("fallbackFile").click();
+            document.getElementById("fallbackLink").style.display = "block";
+        }
+    }
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+    }
+
+    // Grab the current frame from the live viewfinder and immediately extract
+    async function captureAndExtract() {
+        const video = document.getElementById("cameraStream");
+
+        // If camera is live, silently grab the frame
+        if (video.srcObject) {
+            const canvas = document.getElementById("captureCanvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            currentImageBase64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+            stopCamera();
+        }
+
+        if (!currentImageBase64) {
+            showError("scanError", "No image available. Please open the camera or upload an image.");
+            return;
+        }
+
+        // Go straight to processing — no preview shown
+        document.getElementById("extractBtn").style.display = "none";
+        document.getElementById("viewfinderContainer").style.display = "none";
+        document.getElementById("previewContainer").style.display = "none";
+        document.getElementById("fallbackLink").style.display = "none";
+        document.getElementById("processingOverlay").classList.add("active");
+        hideError("scanError");
+
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "extract",
+                    image: currentImageBase64,
+                    state: selectedState
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            populateReviewForm(result);
+
+            document.getElementById("step2").classList.add("hidden");
+            document.getElementById("step3").classList.remove("hidden");
+            document.getElementById("reviewVoterNum").textContent = voterCount + 1;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+
+        } catch (err) {
+            showError("scanError", "Extraction failed: " + err.message + " — You can try again or enter data manually.");
+            // On failure, reopen the camera so they can try again
+            currentImageBase64 = null;
+            startCamera();
+        } finally {
+            document.getElementById("processingOverlay").classList.remove("active");
+        }
+    }
+
+    function handleFallbackUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            currentImageBase64 = dataUrl.split(",")[1];
+
+            document.getElementById("previewImage").src = dataUrl;
+            document.getElementById("previewContainer").style.display = "block";
+            document.getElementById("extractBtn").style.display = "block";
+            document.getElementById("viewfinderContainer").style.display = "none";
+            document.getElementById("fallbackLink").style.display = "none";
+            stopCamera();
+            hideError("scanError");
+        };
+        reader.readAsDataURL(file);
+    }
 
     // ================================================================
     // STEP 1 → STEP 2:  Drive Info → Scan
@@ -682,6 +855,8 @@
     }
 
     function editDriveInfo() {
+        stopCamera();
+        resetScanStep();
         document.getElementById("step2").classList.add("hidden");
         document.getElementById("step1").classList.remove("hidden");
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -704,73 +879,8 @@
     }
 
     // ================================================================
-    // STEP 2:  Image Capture
+    // STEP 3:  Review form population
     // ================================================================
-    function handleImageCapture(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const dataUrl = e.target.result;
-            currentImageBase64 = dataUrl.split(",")[1]; // Strip the data:image/...;base64, prefix
-
-            // Show preview
-            document.getElementById("previewImage").src = dataUrl;
-            document.getElementById("previewContainer").style.display = "block";
-            document.getElementById("scanArea").classList.add("active");
-            document.getElementById("extractBtn").style.display = "block";
-            hideError("scanError");
-        };
-        reader.readAsDataURL(file);
-    }
-
-    // ================================================================
-    // STEP 2 → STEP 3:  Extract via AI and show review form
-    // ================================================================
-    async function extractFormData() {
-        if (!currentImageBase64) {
-            showError("scanError", "Please capture a form image first.");
-            return;
-        }
-
-        // Show processing state
-        document.getElementById("extractBtn").style.display = "none";
-        document.getElementById("processingOverlay").classList.add("active");
-        hideError("scanError");
-
-        try {
-            const response = await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                body: JSON.stringify({
-                    action: "extract",
-                    image: currentImageBase64,
-                    state: selectedState
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.error) {
-                throw new Error(result.error);
-            }
-
-            // Populate review form with extracted data
-            populateReviewForm(result);
-
-            // Move to review step
-            document.getElementById("step2").classList.add("hidden");
-            document.getElementById("step3").classList.remove("hidden");
-            document.getElementById("reviewVoterNum").textContent = voterCount + 1;
-            window.scrollTo({ top: 0, behavior: "smooth" });
-
-        } catch (err) {
-            showError("scanError", "Extraction failed: " + err.message + " — You can try again or enter data manually.");
-            document.getElementById("extractBtn").style.display = "block";
-        } finally {
-            document.getElementById("processingOverlay").classList.remove("active");
-        }
-    }
 
     function populateReviewForm(data) {
         document.getElementById("vFirstName").value = data.firstName || "";
@@ -983,10 +1093,13 @@
     // ================================================================
     function resetScanStep() {
         currentImageBase64 = null;
-        document.getElementById("formImage").value = "";
+        stopCamera();
+        document.getElementById("fallbackFile").value = "";
         document.getElementById("previewContainer").style.display = "none";
-        document.getElementById("scanArea").classList.remove("active");
+        document.getElementById("viewfinderContainer").style.display = "none";
         document.getElementById("extractBtn").style.display = "none";
+        document.getElementById("fallbackLink").style.display = "none";
+        document.getElementById("scanArea").style.display = "block";
         document.getElementById("processingOverlay").classList.remove("active");
         hideError("scanError");
 
@@ -1008,6 +1121,7 @@
         voterCount = 0;
         selectedState = "";
         currentImageBase64 = null;
+        stopCamera();
         resetScanStep();
 
         document.getElementById("leaderFirst").value = "";
