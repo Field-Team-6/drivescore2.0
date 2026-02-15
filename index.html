@@ -47,8 +47,6 @@
             padding: 24px 24px 20px;
             text-align: center;
             border-bottom: 3px solid var(--accent-gold);
-            position: sticky;
-            top: 0;
             z-index: 100;
         }
         .header-logo { height: 70px; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
@@ -558,7 +556,7 @@
             </div>
 
             <button type="button" class="btn btn-scan" id="extractBtn" onclick="captureAndExtract()" style="display:none;">
-                📋 Read This Form
+                Scan Form
             </button>
 
             <div id="scanError" class="status" style="display:none;"></div>
@@ -686,7 +684,7 @@
     // This SINGLE endpoint handles both OCR extraction and
     // data submission — the "action" field tells it what to do.
     // ============================================================
-    const GOOGLE_SCRIPT_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwb0g5i_aCmKDmIuG0Tca83ysaH_LRew6HMr_VwUwI6UW_r9taHouDTC3NdFV-NaIra/exec";
     // ============================================================
 
     // ---- State ----
@@ -741,6 +739,35 @@
         }
     }
 
+    // ================================================================
+    // IMAGE COMPRESSION — Resize large phone camera images
+    // ================================================================
+    function compressImage(base64Data, maxWidth, quality) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                let width = img.width;
+                let height = img.height;
+
+                // Scale down if wider than maxWidth
+                if (width > maxWidth) {
+                    height = Math.round(height * (maxWidth / width));
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressed = canvas.toDataURL("image/jpeg", quality);
+                resolve(compressed.split(",")[1]);
+            };
+            img.src = "data:image/jpeg;base64," + base64Data;
+        });
+    }
+
     // Grab the current frame from the live viewfinder and immediately extract
     async function captureAndExtract() {
         const video = document.getElementById("cameraStream");
@@ -770,16 +797,28 @@
         hideError("scanError");
 
         try {
+            // Compress the image to avoid Google Apps Script size limits
+            // Max 1600px wide at 70% JPEG quality keeps it under ~500KB
+            const compressedImage = await compressImage(currentImageBase64, 1600, 0.7);
+
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
+                redirect: "follow",
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify({
                     action: "extract",
-                    image: currentImageBase64,
+                    image: compressedImage,
                     state: selectedState
                 })
             });
 
-            const result = await response.json();
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (parseErr) {
+                throw new Error("Unexpected response from server. Please try again.");
+            }
 
             if (result.error) {
                 throw new Error(result.error);
@@ -1029,6 +1068,8 @@
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
+                redirect: "follow",
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify({
                     action: "submit",
                     driveInfo: driveInfo,
@@ -1036,7 +1077,13 @@
                 })
             });
 
-            const result = await response.json();
+            const text = await response.text();
+            let result;
+            try {
+                result = JSON.parse(text);
+            } catch (parseErr) {
+                throw new Error("Unexpected response from server.");
+            }
 
             if (result.error) {
                 throw new Error(result.error);
