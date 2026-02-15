@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive Score 2.0 — Field Team 6</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue-dark: #1a2744;
+            --blue-mid: #2b4c7e;
+            --blue-bright: #3a7bd5;
+            --blue-light: #5b9ef0;
+            --blue-pale: #e8f0fe;
+            --accent-gold: #f5c542;
+            --white: #ffffff;
+            --gray-50: #f8f9fa;
+            --gray-100: #f0f2f5;
+            --gray-200: #dde1e7;
+            --gray-400: #9ca3af;
+            --gray-600: #6b7280;
+            --gray-800: #374151;
+            --red-soft: #e74c3c;
+            --green-success: #27ae60;
+            --orange-warn: #e67e22;
+            --shadow-sm: 0 1px 3px rgba(26, 39, 68, 0.12);
+            --shadow-md: 0 4px 12px rgba(26, 39, 68, 0.15);
+            --shadow-lg: 0 8px 30px rgba(26, 39, 68, 0.18);
+            --radius: 10px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-mid) 50%, #1e3a5f 100%);
+            min-height: 100vh;
+            color: var(--gray-800);
+            line-height: 1.6;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            background: rgba(26, 39, 68, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 24px 24px 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--accent-gold);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-logo { height: 70px; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .header h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 2.2rem;
+            color: var(--white);
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .header .tagline {
+            color: var(--blue-light);
+            font-size: 1rem;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+        .header .tagline-italic {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.88rem;
+            font-style: italic;
+            margin-top: 2px;
+        }
+        .version-badge {
+            display: inline-block;
+            background: var(--accent-gold);
+            color: var(--blue-dark);
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            vertical-align: super;
+            margin-left: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== CONTAINER ===== */
+        .container { max-width: 600px; margin: 0 auto; padding: 20px 16px 40px; }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-lg);
+        }
+        .card-title {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--blue-dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title .icon { font-size: 1.3rem; }
+
+        /* ===== FORM FIELDS ===== */
+        .field { margin-bottom: 16px; }
+        .field label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--gray-800);
+            margin-bottom: 5px;
+        }
+        .field input, .field select, .field textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Open Sans', sans-serif;
+            color: var(--gray-800);
+            background: var(--gray-50);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .field input:focus, .field select:focus, .field textarea:focus {
+            outline: none;
+            border-color: var(--blue-bright);
+            box-shadow: 0 0 0 3px rgba(58, 123, 213, 0.15);
+            background: var(--white);
+        }
+        .field-hint {
+            font-size: 0.78rem;
+            color: var(--gray-600);
+            margin-top: 3px;
+            font-style: italic;
+        }
+        .req { color: var(--red-soft); font-weight: 700; }
+
+        /* ===== GRID ROWS ===== */
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px 24px;
+            border: none;
+            border-radius: var(--radius);
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            letter-spacing: 0.3px;
+        }
+        .btn-continue {
+            background: linear-gradient(135deg, var(--blue-bright), var(--blue-mid));
+            color: var(--white);
+            margin-top: 8px;
+        }
+        .btn-continue:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        .btn-scan {
+            background: linear-gradient(135deg, var(--accent-gold), #e6b530);
+            color: var(--blue-dark);
+            font-size: 1.1rem;
+            padding: 18px 24px;
+        }
+        .btn-scan:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        .btn-submit {
+            background: linear-gradient(135deg, var(--green-success), #219a52);
+            color: var(--white);
+            margin-top: 8px;
+        }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        .btn-next {
+            background: linear-gradient(135deg, var(--blue-bright), var(--blue-mid));
+            color: var(--white);
+            margin-top: 8px;
+        }
+        .btn-next:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        .btn-done {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.9);
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+        .btn-done:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* ===== DRIVE SUMMARY BAR ===== */
+        .drive-summary {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            color: rgba(255,255,255,0.85);
+            font-size: 0.88rem;
+            position: relative;
+        }
+        .summary-label {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-gold);
+            margin-bottom: 4px;
+        }
+        .edit-link {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            font-size: 0.82rem;
+            color: var(--accent-gold);
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .edit-link:hover { text-decoration: underline; }
+
+        /* ===== SCAN AREA ===== */
+        .scan-area {
+            border: 3px dashed var(--gray-200);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: border-color 0.3s, background 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+        .scan-area:hover {
+            border-color: var(--blue-bright);
+            background: rgba(58, 123, 213, 0.03);
+        }
+        .scan-area.active {
+            border-color: var(--green-success);
+            background: rgba(39, 174, 96, 0.05);
+        }
+        .scan-icon { font-size: 3rem; margin-bottom: 12px; }
+        .scan-text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            font-size: 1.05rem;
+            color: var(--gray-800);
+            margin-bottom: 4px;
+        }
+        .scan-hint { font-size: 0.85rem; color: var(--gray-600); }
+        .scan-area input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* ===== IMAGE PREVIEW ===== */
+        .preview-container {
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        .preview-container img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+        }
+        .preview-label {
+            font-size: 0.82rem;
+            color: var(--gray-600);
+            margin-top: 8px;
+        }
+
+        /* ===== PROCESSING OVERLAY ===== */
+        .processing-overlay {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .processing-overlay.active { display: block; }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 4px solid var(--gray-200);
+            border-top-color: var(--blue-bright);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .processing-text {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            color: var(--blue-bright);
+            font-size: 1rem;
+        }
+        .processing-subtext {
+            color: var(--gray-600);
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        /* ===== VOTER COUNTER ===== */
+        .voter-counter {
+            text-align: center;
+            padding: 12px;
+            background: rgba(245, 197, 66, 0.1);
+            border: 1px solid rgba(245, 197, 66, 0.3);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+        .voter-counter .count {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-size: 2rem;
+            color: var(--accent-gold);
+        }
+        .voter-counter .count-label {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+            font-weight: 500;
+        }
+
+        /* ===== CONFIDENCE INDICATOR ===== */
+        .confidence-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .confidence-high {
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--green-success);
+            border: 1px solid rgba(39, 174, 96, 0.2);
+        }
+        .confidence-medium {
+            background: rgba(230, 126, 34, 0.1);
+            color: var(--orange-warn);
+            border: 1px solid rgba(230, 126, 34, 0.2);
+        }
+        .confidence-low {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--red-soft);
+            border: 1px solid rgba(231, 76, 60, 0.2);
+        }
+
+        /* ===== STATUS ===== */
+        .status {
+            text-align: center; padding: 16px; border-radius: var(--radius);
+            font-weight: 600; margin-top: 16px; display: none;
+        }
+        .status.success { display: block; background: rgba(39, 174, 96, 0.1); color: var(--green-success); border: 2px solid rgba(39, 174, 96, 0.3); }
+        .status.error { display: block; background: rgba(231, 76, 60, 0.1); color: var(--red-soft); border: 2px solid rgba(231, 76, 60, 0.3); }
+        .status.sending { display: block; background: rgba(58, 123, 213, 0.1); color: var(--blue-bright); border: 2px solid rgba(58, 123, 213, 0.3); }
+
+        /* ===== HIDDEN ===== */
+        .hidden { display: none !important; }
+
+        /* ===== FOOTER ===== */
+        .footer { text-align: center; padding: 20px; color: rgba(255,255,255,0.5); font-size: 0.78rem; line-height: 1.7; }
+        .footer a { color: rgba(255,255,255,0.7); text-decoration: none; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 600px) {
+            .card { padding: 20px 18px; }
+            .row, .row-3 { grid-template-columns: 1fr; }
+            .row-4 { grid-template-columns: 1fr 1fr; }
+            .header h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<div class="header">
+    <img src="https://drive-scout.netlify.app/images/FT6Logo2.png" alt="Field Team 6 Logo" class="header-logo">
+    <h1>Drive Score <span class="version-badge">2.0</span></h1>
+    <div class="tagline">Scan. Review. Submit. Repeat.</div>
+    <div class="tagline-italic">Because in this game, the high score is saving our democracy.</div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="container">
+
+    <!-- ========================================== -->
+    <!-- STEP 1: DRIVE INFO                         -->
+    <!-- ========================================== -->
+    <div id="step1">
+        <div class="card">
+            <div class="card-title"><span class="icon">📋</span> Drive Information</div>
+
+            <div class="row">
+                <div class="field">
+                    <label for="leaderFirst">Your First Name <span class="req">*</span></label>
+                    <input type="text" id="leaderFirst" placeholder="e.g. Jane" required>
+                </div>
+                <div class="field">
+                    <label for="leaderLast">Your Last Name <span class="req">*</span></label>
+                    <input type="text" id="leaderLast" placeholder="e.g. Smith" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <label for="driveDate">Date of Drive <span class="req">*</span></label>
+                    <input type="date" id="driveDate" required>
+                </div>
+                <div class="field">
+                    <label for="driveTime">Time of Drive <span class="req">*</span></label>
+                    <input type="time" id="driveTime" required>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <label for="driveCity">City <span class="req">*</span></label>
+                    <input type="text" id="driveCity" placeholder="e.g. Phoenix" required>
+                </div>
+                <div class="field">
+                    <label for="driveState">State <span class="req">*</span></label>
+                    <select id="driveState" required>
+                        <option value="">Select state…</option>
+                        <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
+                        <option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option>
+                        <option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+                        <option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option>
+                        <option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option>
+                        <option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+                        <option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option>
+                        <option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option>
+                        <option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+                        <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option>
+                        <option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option>
+                        <option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option>
+                        <option>Wisconsin</option><option>Wyoming</option><option>Washington D.C.</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-continue" onclick="continueToScan()">
+                Continue to Form Scanning →
+            </button>
+            <div id="step1Error" class="status" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 2: SCAN FORM                          -->
+    <!-- ========================================== -->
+    <div id="step2" class="hidden">
+
+        <div class="drive-summary" id="driveSummary">
+            <div class="summary-label">Drive Info</div>
+            <div class="summary-details" id="summaryText"></div>
+            <span class="edit-link" onclick="editDriveInfo()">✏️ Edit</span>
+        </div>
+
+        <div class="voter-counter" id="voterCounter">
+            <div class="count" id="voterCountNum">0</div>
+            <div class="count-label">voters submitted so far</div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">📷</span> Scan Voter Registration Form</div>
+
+            <div class="scan-area" id="scanArea">
+                <input type="file" id="formImage" accept="image/*" capture="environment" onchange="handleImageCapture(event)">
+                <div class="scan-icon">📄</div>
+                <div class="scan-text">Tap to scan a form</div>
+                <div class="scan-hint">Take a photo or upload an image of the completed voter registration form</div>
+            </div>
+
+            <div class="preview-container" id="previewContainer">
+                <img id="previewImage" alt="Scanned form preview">
+                <div class="preview-label">Form captured — ready to extract</div>
+            </div>
+
+            <div class="processing-overlay" id="processingOverlay">
+                <div class="spinner"></div>
+                <div class="processing-text">Reading the form…</div>
+                <div class="processing-subtext">AI is extracting voter information</div>
+            </div>
+
+            <button type="button" class="btn btn-scan" id="extractBtn" onclick="extractFormData()" style="display:none;">
+                🤖 Extract Voter Info
+            </button>
+
+            <div id="scanError" class="status" style="display:none;"></div>
+        </div>
+
+        <button type="button" class="btn btn-done" onclick="finishDrive()">
+            ✅ Done — Finish Drive Report
+        </button>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 3: REVIEW & EDIT                      -->
+    <!-- ========================================== -->
+    <div id="step3" class="hidden">
+
+        <div class="drive-summary">
+            <div class="summary-label">Drive Info</div>
+            <div class="summary-details" id="summaryText2"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-title"><span class="icon">✏️</span> Review Voter #<span id="reviewVoterNum">1</span></div>
+
+            <div id="confidenceIndicator" class="confidence-bar confidence-high">
+                <span id="confidenceIcon">✅</span>
+                <span id="confidenceText">High confidence — please double-check the fields below</span>
+            </div>
+
+            <div class="row-4">
+                <div class="field">
+                    <label for="vFirstName">First Name <span class="req">*</span></label>
+                    <input type="text" id="vFirstName" placeholder="First" required>
+                </div>
+                <div class="field">
+                    <label for="vMiddleName">Middle Name</label>
+                    <input type="text" id="vMiddleName" placeholder="Middle">
+                </div>
+                <div class="field">
+                    <label for="vLastName">Last Name <span class="req">*</span></label>
+                    <input type="text" id="vLastName" placeholder="Last" required>
+                </div>
+                <div class="field">
+                    <label for="vSuffix">Suffix</label>
+                    <input type="text" id="vSuffix" placeholder="Jr., II">
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="vStreet">Street Address <span class="req">*</span></label>
+                <input type="text" id="vStreet" placeholder="e.g. 123 Main Street Apt 4B" required>
+            </div>
+
+            <div class="row-3">
+                <div class="field">
+                    <label for="vCity">City <span class="req">*</span></label>
+                    <input type="text" id="vCity" required>
+                </div>
+                <div class="field">
+                    <label for="vState">State <span class="req">*</span></label>
+                    <input type="text" id="vState" readonly>
+                </div>
+                <div class="field">
+                    <label for="vZip">ZIP Code <span class="req">*</span></label>
+                    <input type="text" id="vZip" placeholder="e.g. 85001" required>
+                </div>
+            </div>
+
+            <!-- DOB field — dynamically shown/hidden based on state -->
+            <div id="dobField" class="field">
+                <label for="vDOB">Date of Birth <span class="req">*</span></label>
+                <input type="date" id="vDOB" required>
+            </div>
+
+            <!-- Georgia: Year of Birth only -->
+            <div id="yobField" class="field hidden">
+                <label for="vYOB">Year of Birth <span class="req">*</span></label>
+                <input type="text" id="vYOB" placeholder="e.g. 2004">
+                <div class="field-hint">Georgia requires year of birth only</div>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-submit" id="submitVoterBtn" onclick="submitVoterAndNext()">
+            ✅ Submit & Scan Next Form
+        </button>
+
+        <button type="button" class="btn btn-done" onclick="submitVoterAndFinish()" style="margin-top:8px;">
+            ✅ Submit & Finish (Last Form)
+        </button>
+
+        <div id="reviewError" class="status" style="display:none;"></div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- STEP 4: COMPLETE                           -->
+    <!-- ========================================== -->
+    <div id="step4" class="hidden">
+        <div class="card" style="text-align:center; padding: 40px 24px;">
+            <div style="font-size: 3rem; margin-bottom: 16px;">🎉</div>
+            <div class="card-title" style="justify-content: center; font-size: 1.3rem; margin-bottom: 12px;">Drive Report Complete!</div>
+            <p style="color: var(--gray-600); margin-bottom: 8px;">
+                You submitted <strong id="finalCount">0</strong> voter<span id="finalPlural">s</span> from this drive.
+            </p>
+            <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 24px;">
+                Every voter counts. Thank you for your work! 🗳️
+            </p>
+            <button type="button" class="btn btn-continue" onclick="startNewDrive()">
+                🔄 Start a New Drive
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+    ©2025 Drive Score 2.0 — A <a href="https://www.fieldteam6.org" target="_blank">Field Team 6</a> Tool<br>
+    Not authorized by any candidate or candidate's committee.
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+    // ============================================================
+    // 🔧 CONFIGURATION
+    // Paste your Google Apps Script URL below.
+    // This SINGLE endpoint handles both OCR extraction and
+    // data submission — the "action" field tells it what to do.
+    // ============================================================
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxk4_8lEeDtGPqfW0qb4htDdWx0CJHuwcIWtjRG-snJcbZb9EFHbefwRYwZN5bg3Xvs/exec";
+    // ============================================================
+
+    // ---- State ----
+    let selectedState = "";
+    let voterCount = 0;
+    let currentImageBase64 = null;
+
+    // ---- Set today's date as default ----
+    document.addEventListener("DOMContentLoaded", () => {
+        const today = new Date();
+        document.getElementById("driveDate").value = today.toISOString().split("T")[0];
+        const hh = String(today.getHours()).padStart(2, "0");
+        const mm = String(today.getMinutes()).padStart(2, "0");
+        document.getElementById("driveTime").value = `${hh}:${mm}`;
+    });
+
+    // ================================================================
+    // STEP 1 → STEP 2:  Drive Info → Scan
+    // ================================================================
+    function continueToScan() {
+        const first = document.getElementById("leaderFirst").value.trim();
+        const last = document.getElementById("leaderLast").value.trim();
+        const date = document.getElementById("driveDate").value;
+        const time = document.getElementById("driveTime").value;
+        const city = document.getElementById("driveCity").value.trim();
+        const state = document.getElementById("driveState").value;
+
+        if (!first || !last || !date || !time || !city || !state) {
+            showError("step1Error", "Please fill in all drive info fields.");
+            return;
+        }
+        hideError("step1Error");
+        selectedState = state;
+
+        // Populate summary
+        const summary = `${first} ${last} · ${formatDate(date)} at ${formatTime(time)} · ${city}, ${state}`;
+        document.getElementById("summaryText").textContent = summary;
+        document.getElementById("summaryText2").textContent = summary;
+
+        // Configure DOB fields for review step based on state
+        configureDOBFields();
+
+        // Show scan step
+        document.getElementById("step1").classList.add("hidden");
+        document.getElementById("step2").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function editDriveInfo() {
+        document.getElementById("step2").classList.add("hidden");
+        document.getElementById("step1").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function configureDOBFields() {
+        const dobField = document.getElementById("dobField");
+        const yobField = document.getElementById("yobField");
+
+        if (selectedState === "Georgia") {
+            dobField.classList.add("hidden");
+            yobField.classList.remove("hidden");
+        } else if (selectedState === "North Carolina") {
+            dobField.classList.add("hidden");
+            yobField.classList.add("hidden");
+        } else {
+            dobField.classList.remove("hidden");
+            yobField.classList.add("hidden");
+        }
+    }
+
+    // ================================================================
+    // STEP 2:  Image Capture
+    // ================================================================
+    function handleImageCapture(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            currentImageBase64 = dataUrl.split(",")[1]; // Strip the data:image/...;base64, prefix
+
+            // Show preview
+            document.getElementById("previewImage").src = dataUrl;
+            document.getElementById("previewContainer").style.display = "block";
+            document.getElementById("scanArea").classList.add("active");
+            document.getElementById("extractBtn").style.display = "block";
+            hideError("scanError");
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ================================================================
+    // STEP 2 → STEP 3:  Extract via AI and show review form
+    // ================================================================
+    async function extractFormData() {
+        if (!currentImageBase64) {
+            showError("scanError", "Please capture a form image first.");
+            return;
+        }
+
+        // Show processing state
+        document.getElementById("extractBtn").style.display = "none";
+        document.getElementById("processingOverlay").classList.add("active");
+        hideError("scanError");
+
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "extract",
+                    image: currentImageBase64,
+                    state: selectedState
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            // Populate review form with extracted data
+            populateReviewForm(result);
+
+            // Move to review step
+            document.getElementById("step2").classList.add("hidden");
+            document.getElementById("step3").classList.remove("hidden");
+            document.getElementById("reviewVoterNum").textContent = voterCount + 1;
+            window.scrollTo({ top: 0, behavior: "smooth" });
+
+        } catch (err) {
+            showError("scanError", "Extraction failed: " + err.message + " — You can try again or enter data manually.");
+            document.getElementById("extractBtn").style.display = "block";
+        } finally {
+            document.getElementById("processingOverlay").classList.remove("active");
+        }
+    }
+
+    function populateReviewForm(data) {
+        document.getElementById("vFirstName").value = data.firstName || "";
+        document.getElementById("vMiddleName").value = data.middleName || "";
+        document.getElementById("vLastName").value = data.lastName || "";
+        document.getElementById("vSuffix").value = data.suffix || "";
+        document.getElementById("vStreet").value = data.street || "";
+        document.getElementById("vCity").value = data.city || "";
+        document.getElementById("vState").value = selectedState;
+        document.getElementById("vZip").value = data.zip || "";
+
+        // Handle DOB based on state
+        if (selectedState === "Georgia") {
+            document.getElementById("vYOB").value = data.yearOfBirth || "";
+        } else if (selectedState !== "North Carolina") {
+            // Standard DOB — try to parse into date input format (YYYY-MM-DD)
+            if (data.dob) {
+                const parsed = parseDOB(data.dob);
+                if (parsed) {
+                    document.getElementById("vDOB").value = parsed;
+                }
+            }
+        }
+
+        // Show confidence indicator
+        updateConfidence(data.confidence || "medium");
+    }
+
+    function parseDOB(dobString) {
+        // Attempt to parse various DOB formats into YYYY-MM-DD
+        if (!dobString) return "";
+
+        // Already in YYYY-MM-DD format
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dobString)) return dobString;
+
+        // MM/DD/YYYY or MM-DD-YYYY
+        const match = dobString.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+        if (match) {
+            const mm = match[1].padStart(2, "0");
+            const dd = match[2].padStart(2, "0");
+            return `${match[3]}-${mm}-${dd}`;
+        }
+
+        // Try built-in Date parsing as fallback
+        const d = new Date(dobString);
+        if (!isNaN(d.getTime())) {
+            return d.toISOString().split("T")[0];
+        }
+
+        return "";
+    }
+
+    function updateConfidence(level) {
+        const bar = document.getElementById("confidenceIndicator");
+        const icon = document.getElementById("confidenceIcon");
+        const text = document.getElementById("confidenceText");
+
+        bar.className = "confidence-bar";
+
+        if (level === "high") {
+            bar.classList.add("confidence-high");
+            icon.textContent = "✅";
+            text.textContent = "High confidence — please double-check the fields below";
+        } else if (level === "medium") {
+            bar.classList.add("confidence-medium");
+            icon.textContent = "⚠️";
+            text.textContent = "Medium confidence — some fields may need correction";
+        } else {
+            bar.classList.add("confidence-low");
+            icon.textContent = "🔍";
+            text.textContent = "Low confidence — please carefully review all fields";
+        }
+    }
+
+    // ================================================================
+    // STEP 3:  Submit voter and go back to scan (or finish)
+    // ================================================================
+    async function submitVoter() {
+        // Validate required fields
+        const firstName = document.getElementById("vFirstName").value.trim();
+        const lastName = document.getElementById("vLastName").value.trim();
+        const street = document.getElementById("vStreet").value.trim();
+        const city = document.getElementById("vCity").value.trim();
+        const zip = document.getElementById("vZip").value.trim();
+
+        if (!firstName || !lastName || !street || !city || !zip) {
+            showError("reviewError", "Please fill in all required fields.");
+            return false;
+        }
+
+        // Validate state-specific DOB
+        if (selectedState === "Georgia") {
+            const yob = document.getElementById("vYOB").value.trim();
+            if (!yob || !/^\d{4}$/.test(yob)) {
+                showError("reviewError", "Please enter a valid 4-digit year of birth.");
+                return false;
+            }
+        } else if (selectedState !== "North Carolina") {
+            const dob = document.getElementById("vDOB").value;
+            if (!dob) {
+                showError("reviewError", "Please enter the date of birth.");
+                return false;
+            }
+        }
+
+        hideError("reviewError");
+
+        // Build voter data
+        const voterData = {
+            firstName: firstName,
+            middleName: document.getElementById("vMiddleName").value.trim(),
+            lastName: lastName,
+            suffix: document.getElementById("vSuffix").value.trim(),
+            street: street,
+            city: city,
+            state: selectedState,
+            zip: zip,
+            dob: "",
+            gaYOB: ""
+        };
+
+        if (selectedState === "Georgia") {
+            voterData.gaYOB = document.getElementById("vYOB").value.trim();
+        } else if (selectedState !== "North Carolina") {
+            // Convert date input (YYYY-MM-DD) to MM/DD/YYYY for the sheet
+            const raw = document.getElementById("vDOB").value;
+            if (raw) {
+                const [y, m, d] = raw.split("-");
+                voterData.dob = `${m}/${d}/${y}`;
+            }
+        }
+
+        // Build drive info
+        const driveInfo = {
+            leaderFirst: document.getElementById("leaderFirst").value.trim(),
+            leaderLast: document.getElementById("leaderLast").value.trim(),
+            driveDate: document.getElementById("driveDate").value,
+            driveTime: document.getElementById("driveTime").value,
+            city: document.getElementById("driveCity").value.trim(),
+            state: selectedState
+        };
+
+        // Disable buttons
+        document.getElementById("submitVoterBtn").disabled = true;
+
+        try {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "submit",
+                    driveInfo: driveInfo,
+                    voters: [voterData]
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.error) {
+                throw new Error(result.error);
+            }
+
+            voterCount++;
+            document.getElementById("voterCountNum").textContent = voterCount;
+            return true;
+
+        } catch (err) {
+            showError("reviewError", "Submission failed: " + err.message);
+            return false;
+
+        } finally {
+            document.getElementById("submitVoterBtn").disabled = false;
+        }
+    }
+
+    async function submitVoterAndNext() {
+        const success = await submitVoter();
+        if (success) {
+            resetScanStep();
+            document.getElementById("step3").classList.add("hidden");
+            document.getElementById("step2").classList.remove("hidden");
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }
+
+    async function submitVoterAndFinish() {
+        const success = await submitVoter();
+        if (success) {
+            showCompletionScreen();
+        }
+    }
+
+    function finishDrive() {
+        if (voterCount === 0) {
+            if (!confirm("You haven't submitted any voters yet. Are you sure you want to finish?")) return;
+        }
+        showCompletionScreen();
+    }
+
+    function showCompletionScreen() {
+        document.getElementById("step2").classList.add("hidden");
+        document.getElementById("step3").classList.add("hidden");
+        document.getElementById("step4").classList.remove("hidden");
+        document.getElementById("finalCount").textContent = voterCount;
+        document.getElementById("finalPlural").textContent = voterCount === 1 ? "" : "s";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // ================================================================
+    // RESET & UTILITIES
+    // ================================================================
+    function resetScanStep() {
+        currentImageBase64 = null;
+        document.getElementById("formImage").value = "";
+        document.getElementById("previewContainer").style.display = "none";
+        document.getElementById("scanArea").classList.remove("active");
+        document.getElementById("extractBtn").style.display = "none";
+        document.getElementById("processingOverlay").classList.remove("active");
+        hideError("scanError");
+
+        // Clear review form
+        document.getElementById("vFirstName").value = "";
+        document.getElementById("vMiddleName").value = "";
+        document.getElementById("vLastName").value = "";
+        document.getElementById("vSuffix").value = "";
+        document.getElementById("vStreet").value = "";
+        document.getElementById("vCity").value = "";
+        document.getElementById("vZip").value = "";
+        document.getElementById("vDOB").value = "";
+        document.getElementById("vYOB").value = "";
+        hideError("reviewError");
+    }
+
+    function startNewDrive() {
+        // Full reset
+        voterCount = 0;
+        selectedState = "";
+        currentImageBase64 = null;
+        resetScanStep();
+
+        document.getElementById("leaderFirst").value = "";
+        document.getElementById("leaderLast").value = "";
+        document.getElementById("driveCity").value = "";
+        document.getElementById("driveState").value = "";
+
+        // Reset date/time to now
+        const today = new Date();
+        document.getElementById("driveDate").value = today.toISOString().split("T")[0];
+        const hh = String(today.getHours()).padStart(2, "0");
+        const mm = String(today.getMinutes()).padStart(2, "0");
+        document.getElementById("driveTime").value = `${hh}:${mm}`;
+
+        document.getElementById("voterCountNum").textContent = "0";
+
+        document.getElementById("step4").classList.add("hidden");
+        document.getElementById("step1").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // ---- Error handling ----
+    function showError(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.className = "status error";
+    }
+    function hideError(id) {
+        const el = document.getElementById(id);
+        el.style.display = "none";
+        el.className = "status";
+        el.textContent = "";
+        // Re-enable display:none via class removal
+        setTimeout(() => { el.style.display = ""; }, 10);
+    }
+
+    // ---- Formatting helpers ----
+    function formatDate(dateStr) {
+        const [y, m, d] = dateStr.split("-");
+        return `${parseInt(m)}/${parseInt(d)}/${y}`;
+    }
+    function formatTime(timeStr) {
+        let [h, m] = timeStr.split(":");
+        h = parseInt(h);
+        const ampm = h >= 12 ? "PM" : "AM";
+        if (h > 12) h -= 12;
+        if (h === 0) h = 12;
+        return `${h}:${m} ${ampm}`;
+    }
+</script>
+
+</body>
+</html>
