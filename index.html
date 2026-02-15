@@ -94,6 +94,7 @@
             padding: 28px 24px;
             margin-bottom: 16px;
             box-shadow: var(--shadow-lg);
+            overflow: hidden;
         }
         .card-title {
             font-family: 'Montserrat', sans-serif;
@@ -118,6 +119,7 @@
         }
         .field input, .field select, .field textarea {
             width: 100%;
+            max-width: 100%;
             padding: 11px 14px;
             border: 2px solid var(--gray-200);
             border-radius: 8px;
@@ -126,6 +128,8 @@
             color: var(--gray-800);
             background: var(--gray-50);
             transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
         }
         .field input:focus, .field select:focus, .field textarea:focus {
             outline: none;
@@ -145,6 +149,7 @@
         .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
         .row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+        .row > *, .row-3 > *, .row-4 > * { min-width: 0; }
 
         /* ===== BUTTONS ===== */
         .btn {
