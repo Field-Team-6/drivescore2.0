@@ -948,21 +948,21 @@
         hideError("scanError");
 
         try {
-            // Adaptive compression: stay just under the 5MB API limit
-            // API limit is 5MB of DECODED binary, but we measure BASE64 string length
-            // Base64 is ~33% larger than binary, so 5MB binary ≈ 6.67MB base64
-            const MAX_BASE64_CHARS = 6.5 * 1024 * 1024; // ~4.88MB decoded, safe under 5MB
+            // Adaptive compression: API limit is 5MB on the BASE64 STRING
+            // Prioritize resolution over JPEG quality for best OCR accuracy
+            const MAX_BASE64_CHARS = 5 * 1024 * 1024; // 5,242,880 chars
             let compressedImage = currentImageBase64;
-            let imgWidth = 3200;
-            let quality = 0.95;
+            let imgWidth = 0;
+            let quality = 1.0;
             let passes = 0;
 
             // Only compress if actually over the limit
             if (compressedImage.length > MAX_BASE64_CHARS) {
+                // Keep resolution high, reduce JPEG quality first
                 const steps = [
-                    [3200, 0.92], [3200, 0.88], [3200, 0.85], [3200, 0.82],
-                    [2800, 0.90], [2800, 0.85],
-                    [2400, 0.90], [2400, 0.85], [2400, 0.80]
+                    [3200, 0.90], [3200, 0.85], [3200, 0.80], [3200, 0.75],
+                    [2800, 0.85], [2800, 0.80], [2800, 0.75],
+                    [2400, 0.85], [2400, 0.80], [2400, 0.75]
                 ];
                 for (const [w, q] of steps) {
                     compressedImage = await compressImage(currentImageBase64, w, q);
@@ -973,13 +973,12 @@
                 }
             }
 
-            // Show compression info in processing overlay
+            // Show stats while processing
             const sizeMB = (compressedImage.length / 1024 / 1024).toFixed(1);
-            const binaryMB = (compressedImage.length * 3 / 4 / 1024 / 1024).toFixed(1);
             document.querySelector(".processing-subtext").textContent = 
                 passes === 0 
-                    ? `Full quality · ${binaryMB}MB` 
-                    : `Compressed: ${imgWidth}px @ ${Math.round(quality*100)}% · ${binaryMB}MB`;
+                    ? `Full quality · ${sizeMB}MB` 
+                    : `Compressed: ${imgWidth}px @ ${Math.round(quality*100)}% · ${sizeMB}MB`;
 
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
