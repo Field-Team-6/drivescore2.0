@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drive Score 2.0 — Field Team 6</title>
+    <title>Drive Score — Field Team 6</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
@@ -49,14 +49,22 @@
             border-bottom: 3px solid var(--accent-gold);
             z-index: 100;
         }
-        .header-logo { height: 70px; margin-bottom: 10px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        .header-logo { height: 80px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
         .header h1 {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 800;
-            font-size: 2.2rem;
-            color: var(--white);
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            font-family: 'Typewriter Serial ExtraBold', 'American Typewriter', 'Courier New Bold', 'Monaco Bold', 'Andale Mono', 'Lucida Console', monospace;
+            font-weight: 900;
+            font-size: clamp(3.36rem, 11.2vw, 6.72rem);
+            color: #ffffff;
+            letter-spacing: normal;
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.5);
+            line-height: 0.85;
         }
         .header .tagline {
             color: var(--blue-light);
@@ -65,23 +73,11 @@
             line-height: 1.6;
         }
         .header .tagline-italic {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.88rem;
+            color: var(--blue-light);
+            font-size: 1rem;
             font-style: italic;
+            font-weight: 500;
             margin-top: 2px;
-        }
-        .version-badge {
-            display: inline-block;
-            background: var(--accent-gold);
-            color: var(--blue-dark);
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 0.65rem;
-            padding: 2px 8px;
-            border-radius: 20px;
-            vertical-align: super;
-            margin-left: 6px;
-            letter-spacing: 0.5px;
         }
 
         /* ===== CONTAINER ===== */
@@ -428,7 +424,8 @@
             .card { padding: 20px 18px; }
             .row, .row-3 { grid-template-columns: 1fr; }
             .row-4 { grid-template-columns: 1fr 1fr; }
-            .header h1 { font-size: 1.6rem; }
+            .header-top { gap: 12px; }
+            .header-logo { height: 60px; }
         }
     </style>
 </head>
@@ -436,9 +433,11 @@
 
 <!-- ===== HEADER ===== -->
 <div class="header">
-    <img src="https://drive-scout.netlify.app/images/FT6Logo2.png" alt="Field Team 6 Logo" class="header-logo">
-    <h1>Drive Score <span class="version-badge">2.0</span></h1>
-    <div class="tagline">Scan. Review. Submit. Repeat.</div>
+    <div class="header-top">
+        <img src="https://drive-scout.netlify.app/images/FT6Logo2.png" alt="Field Team 6 Logo" class="header-logo">
+        <h1>Drive Score</h1>
+    </div>
+    <div class="tagline">Report your voter drive results. Every voter counts!</div>
     <div class="tagline-italic">Because in this game, the high score is saving our democracy.</div>
 </div>
 
@@ -709,7 +708,7 @@
 
 <!-- ===== FOOTER ===== -->
 <div class="footer">
-    ©2025 Drive Score 2.0 — A <a href="https://www.fieldteam6.org" target="_blank">Field Team 6</a> Tool<br>
+    ©2025 Drive Score — A <a href="https://www.fieldteam6.org" target="_blank">Field Team 6</a> Tool<br>
     Not authorized by any candidate or candidate's committee.
 </div>
 
@@ -948,7 +947,26 @@
         hideError("scanError");
 
         try {
-            const compressedImage = await compressImage(currentImageBase64, 3200, 0.9);
+            // Adaptive compression: stay just under the 5MB API limit
+            // Base64 encoding adds ~33% overhead, so target ~3.7MB base64
+            const MAX_BASE64_BYTES = 4.9 * 1024 * 1024; // Leave a little headroom
+            let compressedImage = currentImageBase64;
+            let imgWidth = 3200;
+            let quality = 0.95;
+
+            // Try progressively lower quality/size until under limit
+            while (compressedImage.length > MAX_BASE64_BYTES && quality >= 0.5) {
+                compressedImage = await compressImage(currentImageBase64, imgWidth, quality);
+                if (compressedImage.length <= MAX_BASE64_BYTES) break;
+                // Reduce quality first (less visual impact than resizing)
+                quality -= 0.05;
+                if (quality < 0.7 && imgWidth > 2400) {
+                    // If quality alone isn't enough, also reduce dimensions
+                    imgWidth = 2400;
+                    quality = 0.92;
+                }
+            }
+            console.log(`Image size: ${(compressedImage.length / 1024 / 1024).toFixed(2)}MB, quality: ${quality}, width: ${imgWidth}`);
 
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
