@@ -635,9 +635,37 @@
             </div>
 
             <!-- DOB field — dynamically shown/hidden based on state -->
-            <div id="dobField" class="field">
-                <label for="vDOB">Date of Birth <span class="req">*</span></label>
-                <input type="date" id="vDOB" required>
+            <div id="dobField">
+                <label>Date of Birth <span class="req">*</span></label>
+                <div class="row-3">
+                    <div class="field">
+                        <select id="vDOBMonth">
+                            <option value="">Month</option>
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <select id="vDOBDay">
+                            <option value="">Day</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <select id="vDOBYear">
+                            <option value="">Year</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <!-- Georgia: Year of Birth only -->
@@ -710,6 +738,25 @@
         const hh = String(today.getHours()).padStart(2, "0");
         const mm = String(today.getMinutes()).padStart(2, "0");
         document.getElementById("driveTime").value = `${hh}:${mm}`;
+
+        // Populate DOB Day dropdown (1-31)
+        const daySelect = document.getElementById("vDOBDay");
+        for (let d = 1; d <= 31; d++) {
+            const opt = document.createElement("option");
+            opt.value = String(d).padStart(2, "0");
+            opt.textContent = d;
+            daySelect.appendChild(opt);
+        }
+
+        // Populate DOB Year dropdown (1920 to current year)
+        const yearSelect = document.getElementById("vDOBYear");
+        const currentYear = today.getFullYear();
+        for (let y = currentYear; y >= 1920; y--) {
+            const opt = document.createElement("option");
+            opt.value = String(y);
+            opt.textContent = y;
+            yearSelect.appendChild(opt);
+        }
     });
 
     // ================================================================
@@ -946,11 +993,14 @@
         if (selectedState === "Georgia") {
             document.getElementById("vYOB").value = data.yearOfBirth || "";
         } else if (selectedState !== "North Carolina") {
-            // Standard DOB — try to parse into date input format (YYYY-MM-DD)
+            // Standard DOB — parse and set the 3 dropdowns
             if (data.dob) {
                 const parsed = parseDOB(data.dob);
                 if (parsed) {
-                    document.getElementById("vDOB").value = parsed;
+                    const [year, month, day] = parsed.split("-");
+                    document.getElementById("vDOBMonth").value = month;
+                    document.getElementById("vDOBDay").value = day;
+                    document.getElementById("vDOBYear").value = year;
                 }
             }
         }
@@ -1029,9 +1079,11 @@
                 return false;
             }
         } else if (selectedState !== "North Carolina") {
-            const dob = document.getElementById("vDOB").value;
-            if (!dob) {
-                showError("reviewError", "Please enter the date of birth.");
+            const dobMonth = document.getElementById("vDOBMonth").value;
+            const dobDay = document.getElementById("vDOBDay").value;
+            const dobYear = document.getElementById("vDOBYear").value;
+            if (!dobMonth || !dobDay || !dobYear) {
+                showError("reviewError", "Please select the full date of birth.");
                 return false;
             }
         }
@@ -1056,10 +1108,10 @@
         if (selectedState === "Georgia") {
             voterData.gaYOB = document.getElementById("vYOB").value.trim();
         } else if (selectedState !== "North Carolina") {
-            // Convert date input (YYYY-MM-DD) to MM/DD/YYYY for the sheet
-            const raw = document.getElementById("vDOB").value;
-            if (raw) {
-                const [y, m, d] = raw.split("-");
+            const m = document.getElementById("vDOBMonth").value;
+            const d = document.getElementById("vDOBDay").value;
+            const y = document.getElementById("vDOBYear").value;
+            if (m && d && y) {
                 voterData.dob = `${m}/${d}/${y}`;
             }
         }
@@ -1171,7 +1223,9 @@
         document.getElementById("vApt").value = "";
         document.getElementById("vCity").value = "";
         document.getElementById("vZip").value = "";
-        document.getElementById("vDOB").value = "";
+        document.getElementById("vDOBMonth").value = "";
+        document.getElementById("vDOBDay").value = "";
+        document.getElementById("vDOBYear").value = "";
         document.getElementById("vYOB").value = "";
         hideError("reviewError");
     }
