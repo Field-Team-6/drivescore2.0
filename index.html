@@ -944,29 +944,40 @@
         document.getElementById("previewContainer").style.display = "none";
         document.getElementById("fallbackLink").style.display = "none";
         document.getElementById("processingOverlay").classList.add("active");
+        document.querySelector(".processing-subtext").textContent = "This usually takes a few seconds";
         hideError("scanError");
 
         try {
             // Adaptive compression: stay just under the 5MB API limit
-            // Base64 encoding adds ~33% overhead, so target ~3.7MB base64
-            const MAX_BASE64_BYTES = 4.9 * 1024 * 1024; // Leave a little headroom
+            const MAX_BASE64_BYTES = 4.9 * 1024 * 1024;
             let compressedImage = currentImageBase64;
             let imgWidth = 3200;
             let quality = 0.95;
+            let passes = 0;
 
-            // Try progressively lower quality/size until under limit
-            while (compressedImage.length > MAX_BASE64_BYTES && quality >= 0.5) {
-                compressedImage = await compressImage(currentImageBase64, imgWidth, quality);
-                if (compressedImage.length <= MAX_BASE64_BYTES) break;
-                // Reduce quality first (less visual impact than resizing)
-                quality -= 0.05;
-                if (quality < 0.7 && imgWidth > 2400) {
-                    // If quality alone isn't enough, also reduce dimensions
-                    imgWidth = 2400;
-                    quality = 0.92;
+            // Only compress if actually over the limit
+            if (compressedImage.length > MAX_BASE64_BYTES) {
+                // Try progressively — reduce quality in tiny steps first
+                const steps = [
+                    [3200, 0.92], [3200, 0.88], [3200, 0.85], [3200, 0.82],
+                    [2800, 0.90], [2800, 0.85],
+                    [2400, 0.90], [2400, 0.85], [2400, 0.80]
+                ];
+                for (const [w, q] of steps) {
+                    compressedImage = await compressImage(currentImageBase64, w, q);
+                    imgWidth = w;
+                    quality = q;
+                    passes++;
+                    if (compressedImage.length <= MAX_BASE64_BYTES) break;
                 }
             }
-            console.log(`Image size: ${(compressedImage.length / 1024 / 1024).toFixed(2)}MB, quality: ${quality}, width: ${imgWidth}`);
+
+            // Show compression info in processing overlay
+            const sizeMB = (compressedImage.length / 1024 / 1024).toFixed(1);
+            document.querySelector(".processing-subtext").textContent = 
+                passes === 0 
+                    ? `Full quality · ${sizeMB}MB` 
+                    : `Compressed: ${imgWidth}px @ ${Math.round(quality*100)}% · ${sizeMB}MB`;
 
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
