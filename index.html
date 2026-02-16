@@ -527,20 +527,23 @@
             <div class="card-title"><span class="icon">📷</span> Scan Voter Registration Form</div>
 
             <!-- Before camera starts -->
-            <div id="scanArea" class="scan-area" onclick="document.getElementById('cameraInput').click()">
+            <div id="scanArea" class="scan-area" onclick="startCamera()">
                 <div class="scan-icon">📷</div>
-                <div class="scan-text">Tap to take photo of form</div>
-                <div class="scan-hint">Your phone's camera will open — photo is not saved to your device</div>
+                <div class="scan-text">Tap to open camera</div>
+                <div class="scan-hint">Point your phone at the form</div>
             </div>
 
-            <!-- Native camera input (takes full-resolution still photo) -->
-            <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)" style="display:none;">
+            <!-- Live camera viewfinder -->
+            <div id="viewfinderContainer" class="viewfinder-container" style="display:none;">
+                <video id="cameraStream" autoplay playsinline></video>
+                <div class="viewfinder-hint">Position form in frame, then tap Scan Form</div>
+            </div>
 
-            <!-- Captured photo preview -->
-            <div class="preview-container" id="previewContainer">
+            <!-- Captured photo preview (for file upload fallback) -->
+            <div class="preview-container" id="previewContainer" style="display:none;">
                 <canvas id="captureCanvas" style="display:none;"></canvas>
                 <img id="previewImage" alt="Captured photo">
-                <div class="preview-label">Photo captured — tap Scan Form below</div>
+                <div class="preview-label">Photo ready — tap Scan Form below</div>
             </div>
 
             <!-- Alternative: upload existing image -->
@@ -756,8 +759,50 @@
     });
 
     // ================================================================
-    // CAMERA — Use native camera for full-resolution photo
+    // CAMERA — getUserMedia with max resolution (one-time permission)
     // ================================================================
+    async function startCamera() {
+        try {
+            // Request highest possible resolution
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 4096 },
+                    height: { ideal: 3072 }
+                }
+            });
+
+            cameraStream = stream;
+            const video = document.getElementById("cameraStream");
+            video.srcObject = stream;
+
+            // Try to boost resolution even further once stream is active
+            const track = stream.getVideoTracks()[0];
+            if (track.getCapabilities) {
+                const caps = track.getCapabilities();
+                if (caps.width && caps.height) {
+                    try {
+                        await track.applyConstraints({
+                            width: { ideal: caps.width.max },
+                            height: { ideal: caps.height.max }
+                        });
+                    } catch (e) { /* ignore constraint errors */ }
+                }
+            }
+
+            document.getElementById("scanArea").style.display = "none";
+            document.getElementById("viewfinderContainer").style.display = "block";
+            document.getElementById("extractBtn").style.display = "block";
+            document.getElementById("fallbackLink").style.display = "block";
+
+        } catch (err) {
+            console.log("Camera not available:", err.message);
+            document.getElementById("scanArea").style.display = "none";
+            document.getElementById("fallbackFile").click();
+            document.getElementById("fallbackLink").style.display = "block";
+        }
+    }
+
     function stopCamera() {
         if (cameraStream) {
             cameraStream.getTracks().forEach(track => track.stop());
@@ -766,7 +811,7 @@
     }
 
     // ================================================================
-    // IMAGE COMPRESSION — Resize large phone camera images
+    // IMAGE PROCESSING — Compression + Sharpening for handwriting
     // ================================================================
     function compressImage(base64Data, maxWidth, quality) {
         return new Promise((resolve) => {
@@ -776,7 +821,6 @@
                 let width = img.width;
                 let height = img.height;
 
-                // Scale down if wider than maxWidth
                 if (width > maxWidth) {
                     height = Math.round(height * (maxWidth / width));
                     width = maxWidth;
@@ -794,7 +838,53 @@
         });
     }
 
-    // Handle photo from native camera or file upload
+    // Sharpen image using unsharp mask to improve handwriting clarity
+    function sharpenImage(canvas, strength) {
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+
+        // Create a blurred copy
+        const blurCanvas = document.createElement("canvas");
+        blurCanvas.width = w;
+        blurCanvas.height = h;
+        const blurCtx = blurCanvas.getContext("2d");
+        blurCtx.filter = "blur(1px)";
+        blurCtx.drawImage(canvas, 0, 0);
+        const blurData = blurCtx.getImageData(0, 0, w, h).data;
+
+        // Unsharp mask: original + strength * (original - blurred)
+        const amount = strength || 0.5;
+        for (let i = 0; i < data.length; i += 4) {
+            data[i]     = Math.min(255, Math.max(0, data[i]     + amount * (data[i]     - blurData[i])));
+            data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + amount * (data[i + 1] - blurData[i + 1])));
+            data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + amount * (data[i + 2] - blurData[i + 2])));
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    // Also boost contrast slightly to make handwriting stand out
+    function enhanceContrast(canvas, amount) {
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        const imageData = ctx.getImageData(0, 0, w, h);
+        const data = imageData.data;
+        const factor = (259 * (amount + 255)) / (255 * (259 - amount));
+
+        for (let i = 0; i < data.length; i += 4) {
+            data[i]     = Math.min(255, Math.max(0, factor * (data[i]     - 128) + 128));
+            data[i + 1] = Math.min(255, Math.max(0, factor * (data[i + 1] - 128) + 128));
+            data[i + 2] = Math.min(255, Math.max(0, factor * (data[i + 2] - 128) + 128));
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+    }
+
+    // Handle file upload fallback
     function handlePhotoCapture(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -808,15 +898,35 @@
             document.getElementById("previewContainer").style.display = "block";
             document.getElementById("extractBtn").style.display = "block";
             document.getElementById("scanArea").style.display = "none";
+            document.getElementById("viewfinderContainer").style.display = "none";
             document.getElementById("fallbackLink").style.display = "block";
+            stopCamera();
             hideError("scanError");
         };
         reader.readAsDataURL(file);
     }
 
-    // Extract data from the captured photo
+    // Capture frame from live video, enhance, and extract
     async function captureAndExtract() {
-        // Fallback: if currentImageBase64 is empty but preview image is loaded, re-extract from it
+        const video = document.getElementById("cameraStream");
+
+        // If camera is live, grab a high-res frame and enhance it
+        if (video.srcObject) {
+            const canvas = document.getElementById("captureCanvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Enhance the image for better handwriting recognition
+            enhanceContrast(canvas, 30);
+            sharpenImage(canvas, 0.6);
+
+            currentImageBase64 = canvas.toDataURL("image/jpeg", 0.95).split(",")[1];
+            stopCamera();
+        }
+
+        // Fallback: re-read from preview if variable was cleared
         if (!currentImageBase64) {
             const previewImg = document.getElementById("previewImage");
             if (previewImg && previewImg.src && previewImg.src.startsWith("data:")) {
@@ -825,19 +935,19 @@
         }
 
         if (!currentImageBase64) {
-            showError("scanError", "No image available. Please take a photo or upload an image.");
+            showError("scanError", "No image available. Please open the camera or upload an image.");
             return;
         }
 
-        // Go straight to processing
+        // Show processing state
         document.getElementById("extractBtn").style.display = "none";
+        document.getElementById("viewfinderContainer").style.display = "none";
         document.getElementById("previewContainer").style.display = "none";
         document.getElementById("fallbackLink").style.display = "none";
         document.getElementById("processingOverlay").classList.add("active");
         hideError("scanError");
 
         try {
-            // Compress the image — keep high quality for handwriting recognition
             const compressedImage = await compressImage(currentImageBase64, 3200, 0.9);
 
             const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -1166,9 +1276,9 @@
     function resetScanStep() {
         currentImageBase64 = null;
         stopCamera();
-        document.getElementById("cameraInput").value = "";
         document.getElementById("fallbackFile").value = "";
         document.getElementById("previewContainer").style.display = "none";
+        document.getElementById("viewfinderContainer").style.display = "none";
         document.getElementById("extractBtn").style.display = "none";
         document.getElementById("fallbackLink").style.display = "none";
         document.getElementById("scanArea").style.display = "block";
