@@ -527,28 +527,24 @@
             <div class="card-title"><span class="icon">📷</span> Scan Voter Registration Form</div>
 
             <!-- Before camera starts -->
-            <div id="scanArea" class="scan-area" onclick="startCamera()">
+            <div id="scanArea" class="scan-area" onclick="document.getElementById('cameraInput').click()">
                 <div class="scan-icon">📷</div>
-                <div class="scan-text">Tap to open camera</div>
-                <div class="scan-hint">Point your phone at the form — no photo saved to your device</div>
+                <div class="scan-text">Tap to take photo of form</div>
+                <div class="scan-hint">Your phone's camera will open — photo is not saved to your device</div>
             </div>
 
-            <!-- Live camera viewfinder -->
-            <div id="viewfinderContainer" class="viewfinder-container" style="display:none;">
-                <video id="cameraStream" autoplay playsinline></video>
-                <div class="viewfinder-overlay"></div>
-                <div class="viewfinder-hint">Position form in frame</div>
-            </div>
+            <!-- Native camera input (takes full-resolution still photo) -->
+            <input type="file" id="cameraInput" accept="image/*" capture="environment" onchange="handlePhotoCapture(event)" style="display:none;">
 
-            <!-- Captured frame preview (shown on fallback upload or retry) -->
+            <!-- Captured photo preview -->
             <div class="preview-container" id="previewContainer">
                 <canvas id="captureCanvas" style="display:none;"></canvas>
-                <img id="previewImage" alt="Captured frame">
-                <div class="preview-label">Image ready — tap Extract below</div>
+                <img id="previewImage" alt="Captured photo">
+                <div class="preview-label">Photo captured — tap Scan Form below</div>
             </div>
 
-            <!-- Hidden file input as fallback -->
-            <input type="file" id="fallbackFile" accept="image/*" capture="environment" onchange="handleFallbackUpload(event)" style="display:none;">
+            <!-- Alternative: upload existing image -->
+            <input type="file" id="fallbackFile" accept="image/*" onchange="handlePhotoCapture(event)" style="display:none;">
             <div id="fallbackLink" class="fallback-upload" style="display:none;">
                 Or <a onclick="document.getElementById('fallbackFile').click()">upload an image</a> instead
             </div>
@@ -760,35 +756,8 @@
     });
 
     // ================================================================
-    // CAMERA — Live viewfinder using getUserMedia
+    // CAMERA — Use native camera for full-resolution photo
     // ================================================================
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: "environment" },
-                    width: { ideal: 3840 },
-                    height: { ideal: 2160 }
-                }
-            });
-
-            cameraStream = stream;
-            const video = document.getElementById("cameraStream");
-            video.srcObject = stream;
-
-            document.getElementById("scanArea").style.display = "none";
-            document.getElementById("viewfinderContainer").style.display = "block";
-            document.getElementById("extractBtn").style.display = "block";
-            document.getElementById("fallbackLink").style.display = "block";
-
-        } catch (err) {
-            console.log("Camera not available:", err.message);
-            document.getElementById("scanArea").style.display = "none";
-            document.getElementById("fallbackFile").click();
-            document.getElementById("fallbackLink").style.display = "block";
-        }
-    }
-
     function stopCamera() {
         if (cameraStream) {
             cameraStream.getTracks().forEach(track => track.stop());
@@ -825,21 +794,28 @@
         });
     }
 
-    // Grab the current frame from the live viewfinder and immediately extract
+    // Handle photo from native camera or file upload
+    function handlePhotoCapture(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const dataUrl = e.target.result;
+            currentImageBase64 = dataUrl.split(",")[1];
+
+            document.getElementById("previewImage").src = dataUrl;
+            document.getElementById("previewContainer").style.display = "block";
+            document.getElementById("extractBtn").style.display = "block";
+            document.getElementById("scanArea").style.display = "none";
+            document.getElementById("fallbackLink").style.display = "block";
+            hideError("scanError");
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // Extract data from the captured photo
     async function captureAndExtract() {
-        const video = document.getElementById("cameraStream");
-
-        // If camera is live, silently grab the frame
-        if (video.srcObject) {
-            const canvas = document.getElementById("captureCanvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            currentImageBase64 = canvas.toDataURL("image/jpeg", 0.95).split(",")[1];
-            stopCamera();
-        }
-
         // Fallback: if currentImageBase64 is empty but preview image is loaded, re-extract from it
         if (!currentImageBase64) {
             const previewImg = document.getElementById("previewImage");
@@ -849,13 +825,12 @@
         }
 
         if (!currentImageBase64) {
-            showError("scanError", "No image available. Please open the camera or upload an image.");
+            showError("scanError", "No image available. Please take a photo or upload an image.");
             return;
         }
 
-        // Go straight to processing — no preview shown
+        // Go straight to processing
         document.getElementById("extractBtn").style.display = "none";
-        document.getElementById("viewfinderContainer").style.display = "none";
         document.getElementById("previewContainer").style.display = "none";
         document.getElementById("fallbackLink").style.display = "none";
         document.getElementById("processingOverlay").classList.add("active");
@@ -897,32 +872,11 @@
 
         } catch (err) {
             showError("scanError", "Extraction failed: " + err.message + " — You can try again or enter data manually.");
-            // On failure, reopen the camera so they can try again
             currentImageBase64 = null;
-            startCamera();
+            document.getElementById("scanArea").style.display = "block";
         } finally {
             document.getElementById("processingOverlay").classList.remove("active");
         }
-    }
-
-    function handleFallbackUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const dataUrl = e.target.result;
-            currentImageBase64 = dataUrl.split(",")[1];
-
-            document.getElementById("previewImage").src = dataUrl;
-            document.getElementById("previewContainer").style.display = "block";
-            document.getElementById("extractBtn").style.display = "block";
-            document.getElementById("viewfinderContainer").style.display = "none";
-            document.getElementById("fallbackLink").style.display = "none";
-            stopCamera();
-            hideError("scanError");
-        };
-        reader.readAsDataURL(file);
     }
 
     // ================================================================
@@ -1212,9 +1166,9 @@
     function resetScanStep() {
         currentImageBase64 = null;
         stopCamera();
+        document.getElementById("cameraInput").value = "";
         document.getElementById("fallbackFile").value = "";
         document.getElementById("previewContainer").style.display = "none";
-        document.getElementById("viewfinderContainer").style.display = "none";
         document.getElementById("extractBtn").style.display = "none";
         document.getElementById("fallbackLink").style.display = "none";
         document.getElementById("scanArea").style.display = "block";
