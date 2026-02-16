@@ -767,8 +767,8 @@
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: { ideal: "environment" },
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 }
+                    width: { ideal: 3840 },
+                    height: { ideal: 2160 }
                 }
             });
 
@@ -836,8 +836,16 @@
             canvas.height = video.videoHeight;
             const ctx = canvas.getContext("2d");
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            currentImageBase64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+            currentImageBase64 = canvas.toDataURL("image/jpeg", 0.95).split(",")[1];
             stopCamera();
+        }
+
+        // Fallback: if currentImageBase64 is empty but preview image is loaded, re-extract from it
+        if (!currentImageBase64) {
+            const previewImg = document.getElementById("previewImage");
+            if (previewImg && previewImg.src && previewImg.src.startsWith("data:")) {
+                currentImageBase64 = previewImg.src.split(",")[1];
+            }
         }
 
         if (!currentImageBase64) {
@@ -854,9 +862,8 @@
         hideError("scanError");
 
         try {
-            // Compress the image to avoid Google Apps Script size limits
-            // Max 2400px wide at 85% JPEG quality — need high detail for handwriting
-            const compressedImage = await compressImage(currentImageBase64, 2400, 0.85);
+            // Compress the image — keep high quality for handwriting recognition
+            const compressedImage = await compressImage(currentImageBase64, 3200, 0.9);
 
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
