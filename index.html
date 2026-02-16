@@ -611,7 +611,12 @@
 
             <div class="field">
                 <label for="vStreet">Street Address <span class="req">*</span></label>
-                <input type="text" id="vStreet" placeholder="e.g. 123 Main Street Apt 4B" required>
+                <input type="text" id="vStreet" placeholder="e.g. 123 Main Street" required>
+            </div>
+
+            <div class="field">
+                <label for="vApt">Apt #/Unit #</label>
+                <input type="text" id="vApt" placeholder="e.g. Apt 4B">
             </div>
 
             <div class="row-3">
@@ -643,6 +648,8 @@
             </div>
         </div>
 
+        <div id="reviewError" class="status" style="display:none;"></div>
+
         <button type="button" class="btn btn-submit" id="submitVoterBtn" onclick="submitVoterAndNext()">
             ✅ Submit & Scan Next Form
         </button>
@@ -650,8 +657,6 @@
         <button type="button" class="btn btn-done" onclick="submitVoterAndFinish()" style="margin-top:8px;">
             ✅ Submit & Finish (Last Form)
         </button>
-
-        <div id="reviewError" class="status" style="display:none;"></div>
     </div>
 
     <!-- ========================================== -->
@@ -932,6 +937,7 @@
         document.getElementById("vLastName").value = data.lastName || "";
         document.getElementById("vSuffix").value = data.suffix || "";
         document.getElementById("vStreet").value = data.street || "";
+        document.getElementById("vApt").value = data.apt || "";
         document.getElementById("vCity").value = data.city || "";
         document.getElementById("vState").value = selectedState;
         document.getElementById("vZip").value = data.zip || "";
@@ -1039,6 +1045,7 @@
             lastName: lastName,
             suffix: document.getElementById("vSuffix").value.trim(),
             street: street,
+            apt: document.getElementById("vApt").value.trim(),
             city: city,
             state: selectedState,
             zip: zip,
@@ -1161,6 +1168,7 @@
         document.getElementById("vLastName").value = "";
         document.getElementById("vSuffix").value = "";
         document.getElementById("vStreet").value = "";
+        document.getElementById("vApt").value = "";
         document.getElementById("vCity").value = "";
         document.getElementById("vZip").value = "";
         document.getElementById("vDOB").value = "";
