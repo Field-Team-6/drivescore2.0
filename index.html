@@ -855,8 +855,8 @@
 
         try {
             // Compress the image to avoid Google Apps Script size limits
-            // Max 1600px wide at 70% JPEG quality keeps it under ~500KB
-            const compressedImage = await compressImage(currentImageBase64, 1600, 0.7);
+            // Max 2400px wide at 85% JPEG quality — need high detail for handwriting
+            const compressedImage = await compressImage(currentImageBase64, 2400, 0.85);
 
             const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
