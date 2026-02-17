@@ -54,7 +54,6 @@ exports.handler = async function (event) {
 
     const prompt =
       "Carefully transcribe the handwritten fields from this voter registration form.\n\n" +
-      "NOTE: The image may be rotated 90° left, 90° right, or upside down. Read the text in whatever orientation it appears.\n\n" +
       "IMPORTANT — read each field character by character:\n" +
       "- For the house number: count every digit carefully. Look for 4-digit numbers like 7829, not just 2-3 digits.\n" +
       "- For the street name: this may be an unusual or made-up word. Read each letter individually and transcribe exactly.\n" +
