@@ -236,43 +236,7 @@
         }
         .edit-link:hover { text-decoration: underline; }
 
-        /* ===== CAMERA VIEWFINDER ===== */
-        .viewfinder-container {
-            position: relative;
-            width: 100%;
-            border-radius: var(--radius);
-            overflow: hidden;
-            margin-bottom: 16px;
-            background: #000;
-        }
-        .viewfinder-container video {
-            width: 100%;
-            display: block;
-            border-radius: var(--radius);
-        }
-        .viewfinder-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            border: 3px solid rgba(245, 197, 66, 0.6);
-            border-radius: var(--radius);
-            pointer-events: none;
-        }
-        .viewfinder-hint {
-            position: absolute;
-            bottom: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.65);
-            color: var(--white);
-            font-size: 0.82rem;
-            font-weight: 600;
-            padding: 6px 16px;
-            border-radius: 20px;
-            white-space: nowrap;
-            pointer-events: none;
-        }
-
-        /* ===== START CAMERA AREA (before camera is active) ===== */
+        /* ===== START SCAN AREA ===== */
         .scan-area {
             border: 3px dashed var(--gray-200);
             border-radius: var(--radius);
@@ -295,37 +259,6 @@
             margin-bottom: 4px;
         }
         .scan-hint { font-size: 0.85rem; color: var(--gray-600); }
-
-        /* ===== FALLBACK FILE INPUT ===== */
-        .fallback-upload {
-            text-align: center;
-            margin-top: 8px;
-            font-size: 0.82rem;
-            color: var(--gray-600);
-        }
-        .fallback-upload a {
-            color: var(--blue-bright);
-            cursor: pointer;
-            text-decoration: underline;
-        }
-
-        /* ===== CAPTURED FRAME PREVIEW ===== */
-        .preview-container {
-            margin-bottom: 20px;
-            text-align: center;
-            display: none;
-        }
-        .preview-container img, .preview-container canvas {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 8px;
-            box-shadow: var(--shadow-md);
-        }
-        .preview-label {
-            font-size: 0.82rem;
-            color: var(--gray-600);
-            margin-top: 8px;
-        }
 
         /* ===== PROCESSING OVERLAY ===== */
         .processing-overlay {
@@ -523,33 +456,20 @@
         </div>
 
         <div class="card">
-            <div class="card-title"><span class="icon">📷</span> Scan Voter Registration Form</div>
+            <div class="card-title"><span class="icon">📋</span> Scan Voter Registration Form</div>
 
-            <!-- Before camera starts -->
-            <div id="scanArea" class="scan-area" onclick="startCamera()">
-                <div class="scan-icon">📷</div>
-                <div class="scan-text">Tap to open camera</div>
-                <div class="scan-hint">Point your phone at the form</div>
+            <!-- Scan button triggers native camera -->
+            <div id="scanArea" class="scan-area" onclick="document.getElementById('scanFile').click()">
+                <div class="scan-icon">🔍</div>
+                <div class="scan-text">Tap to scan form</div>
+                <div class="scan-hint">Your phone will open a scanner — the scan is used only to read the text and is never saved or stored</div>
             </div>
 
-            <!-- Live camera viewfinder -->
-            <div id="viewfinderContainer" class="viewfinder-container" style="display:none;">
-                <video id="cameraStream" autoplay playsinline></video>
-                <div class="viewfinder-hint">Position form in frame, then tap Scan Form</div>
-            </div>
+            <!-- Hidden file input with native camera capture -->
+            <input type="file" id="scanFile" accept="image/*" capture="environment" onchange="handleScanCapture(event)" style="display:none;">
 
-            <!-- Captured photo preview (for file upload fallback) -->
-            <div class="preview-container" id="previewContainer" style="display:none;">
-                <canvas id="captureCanvas" style="display:none;"></canvas>
-                <img id="previewImage" alt="Captured photo">
-                <div class="preview-label">Photo ready — tap Scan Form below</div>
-            </div>
-
-            <!-- Alternative: upload existing image -->
-            <input type="file" id="fallbackFile" accept="image/*" onchange="handlePhotoCapture(event)" style="display:none;">
-            <div id="fallbackLink" class="fallback-upload" style="display:none;">
-                Or <a onclick="document.getElementById('fallbackFile').click()">upload an image</a> instead
-            </div>
+            <!-- Hidden canvas for image processing -->
+            <canvas id="captureCanvas" style="display:none;"></canvas>
 
             <!-- Processing overlay -->
             <div class="processing-overlay" id="processingOverlay">
@@ -557,10 +477,6 @@
                 <div class="processing-text">Reading the form…</div>
                 <div class="processing-subtext">This usually takes a few seconds</div>
             </div>
-
-            <button type="button" class="btn btn-scan" id="extractBtn" onclick="captureAndExtract()" style="display:none;">
-                Scan Form
-            </button>
 
             <div id="scanError" class="status" style="display:none;"></div>
         </div>
@@ -727,7 +643,6 @@
     let selectedState = "";
     let voterCount = 0;
     let currentImageBase64 = null;
-    let cameraStream = null;
 
     // ---- Set today's date as default ----
     document.addEventListener("DOMContentLoaded", () => {
@@ -756,60 +671,6 @@
             yearSelect.appendChild(opt);
         }
     });
-
-    // ================================================================
-    // CAMERA — getUserMedia with max resolution (one-time permission)
-    // ================================================================
-    async function startCamera() {
-        try {
-            // Request highest possible resolution
-            const stream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: "environment" },
-                    width: { ideal: 4096 },
-                    height: { ideal: 3072 }
-                }
-            });
-
-            cameraStream = stream;
-            const video = document.getElementById("cameraStream");
-            video.srcObject = stream;
-
-            // Try to boost resolution even further once stream is active
-            const track = stream.getVideoTracks()[0];
-            if (track.getCapabilities) {
-                const caps = track.getCapabilities();
-                if (caps.width && caps.height) {
-                    try {
-                        await track.applyConstraints({
-                            width: { ideal: caps.width.max },
-                            height: { ideal: caps.height.max }
-                        });
-                    } catch (e) { /* ignore constraint errors */ }
-                }
-            }
-
-            document.getElementById("scanArea").style.display = "none";
-            document.getElementById("viewfinderContainer").style.display = "block";
-            document.getElementById("extractBtn").style.display = "block";
-            document.getElementById("fallbackLink").style.display = "block";
-
-        } catch (err) {
-            console.log("Camera not available:", err.message);
-            document.getElementById("scanArea").style.display = "none";
-            document.getElementById("fallbackFile").click();
-            document.getElementById("fallbackLink").style.display = "block";
-        }
-    }
-
-    function stopCamera() {
-        if (cameraStream) {
-            cameraStream.getTracks().forEach(track => track.stop());
-            cameraStream = null;
-        }
-        const video = document.getElementById("cameraStream");
-        if (video) video.srcObject = null;
-    }
 
     // ================================================================
     // IMAGE PROCESSING — Compression + Sharpening for handwriting
@@ -892,82 +753,44 @@
         ctx.putImageData(imageData, 0, 0);
     }
 
-    // Handle file upload fallback
-    function handlePhotoCapture(event) {
+    // Handle scan capture — skip preview, go straight to extraction
+    async function handleScanCapture(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = async function(e) {
             const dataUrl = e.target.result;
             currentImageBase64 = dataUrl.split(",")[1];
 
-            document.getElementById("previewImage").src = dataUrl;
-            document.getElementById("previewContainer").style.display = "block";
-            document.getElementById("extractBtn").style.display = "block";
+            // Hide scan area, show processing immediately
             document.getElementById("scanArea").style.display = "none";
-            document.getElementById("viewfinderContainer").style.display = "none";
-            document.getElementById("fallbackLink").style.display = "block";
-            stopCamera();
+            document.getElementById("processingOverlay").classList.add("active");
+            document.querySelector(".processing-subtext").textContent = "This usually takes a few seconds";
             hideError("scanError");
+
+            await extractFromImage();
         };
         reader.readAsDataURL(file);
     }
 
-    // Capture frame from live video, enhance, and extract
-    async function captureAndExtract() {
-        const video = document.getElementById("cameraStream");
-
-        // If camera is live, grab a high-res frame and enhance it
-        if (video.srcObject) {
-            const canvas = document.getElementById("captureCanvas");
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // Enhance the image for better handwriting recognition
-            enhanceContrast(canvas, 30);
-            sharpenImage(canvas, 0.6);
-
-            currentImageBase64 = canvas.toDataURL("image/jpeg", 0.95).split(",")[1];
-            stopCamera();
-        }
-
-        // Fallback: re-read from preview if variable was cleared
+    // Extract data from the current image
+    async function extractFromImage() {
         if (!currentImageBase64) {
-            const previewImg = document.getElementById("previewImage");
-            if (previewImg && previewImg.src && previewImg.src.startsWith("data:")) {
-                currentImageBase64 = previewImg.src.split(",")[1];
-            }
-        }
-
-        if (!currentImageBase64) {
-            showError("scanError", "No image available. Please open the camera or upload an image.");
+            showError("scanError", "No scan available. Please try again.");
+            document.getElementById("scanArea").style.display = "block";
             return;
         }
 
-        // Show processing state
-        document.getElementById("extractBtn").style.display = "none";
-        document.getElementById("viewfinderContainer").style.display = "none";
-        document.getElementById("previewContainer").style.display = "none";
-        document.getElementById("fallbackLink").style.display = "none";
-        document.getElementById("processingOverlay").classList.add("active");
-        document.querySelector(".processing-subtext").textContent = "This usually takes a few seconds";
-        hideError("scanError");
-
         try {
             // Adaptive compression: API limit is 5MB on the BASE64 STRING
-            // Prioritize resolution over JPEG quality for best OCR accuracy
-            const MAX_BASE64_CHARS = 5 * 1024 * 1024; // 5,242,880 chars
+            const MAX_BASE64_CHARS = 5 * 1024 * 1024;
             let compressedImage = currentImageBase64;
             let imgWidth = 0;
             let quality = 1.0;
             let passes = 0;
 
-            // Only compress if actually over the limit
             if (compressedImage.length > MAX_BASE64_CHARS) {
-                // Keep resolution high, reduce JPEG quality first
                 const steps = [
                     [3200, 0.90], [3200, 0.85], [3200, 0.80], [3200, 0.75],
                     [2800, 0.85], [2800, 0.80], [2800, 0.75],
@@ -982,7 +805,6 @@
                 }
             }
 
-            // Show stats while processing
             const sizeMB = (compressedImage.length / 1024 / 1024).toFixed(1);
             document.querySelector(".processing-subtext").textContent = 
                 passes === 0 
@@ -1012,6 +834,11 @@
                 throw new Error(result.error);
             }
 
+            // Reassemble ZIP from individual digits if present
+            if (result.zipDigit1 !== undefined) {
+                result.zip = (result.zipDigit1 || "") + (result.zipDigit2 || "") + (result.zipDigit3 || "") + (result.zipDigit4 || "") + (result.zipDigit5 || "");
+            }
+
             populateReviewForm(result);
 
             document.getElementById("step2").classList.add("hidden");
@@ -1020,10 +847,10 @@
             window.scrollTo({ top: 0, behavior: "smooth" });
 
         } catch (err) {
-            showError("scanError", "Extraction failed: " + err.message + " — You can try again or enter data manually.");
-            currentImageBase64 = null;
+            showError("scanError", "Scan failed: " + err.message + " — You can try again or enter data manually.");
             document.getElementById("scanArea").style.display = "block";
         } finally {
+            currentImageBase64 = null;
             document.getElementById("processingOverlay").classList.remove("active");
         }
     }
@@ -1061,7 +888,6 @@
     }
 
     function editDriveInfo() {
-        stopCamera();
         resetScanStep();
         document.getElementById("step2").classList.add("hidden");
         document.getElementById("step1").classList.remove("hidden");
@@ -1314,12 +1140,7 @@
     // ================================================================
     function resetScanStep() {
         currentImageBase64 = null;
-        stopCamera();
-        document.getElementById("fallbackFile").value = "";
-        document.getElementById("previewContainer").style.display = "none";
-        document.getElementById("viewfinderContainer").style.display = "none";
-        document.getElementById("extractBtn").style.display = "none";
-        document.getElementById("fallbackLink").style.display = "none";
+        document.getElementById("scanFile").value = "";
         document.getElementById("scanArea").style.display = "block";
         document.getElementById("processingOverlay").classList.remove("active");
         hideError("scanError");
@@ -1345,7 +1166,6 @@
         voterCount = 0;
         selectedState = "";
         currentImageBase64 = null;
-        stopCamera();
         resetScanStep();
 
         document.getElementById("leaderFirst").value = "";
