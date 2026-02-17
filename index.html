@@ -684,29 +684,24 @@
         hideError("scanError");
 
         try {
-            // Load image from file using object URL (much more memory-efficient than base64)
-            const img = await loadImageFromFile(file);
-            
+            // Read EXIF orientation (phones record gyroscope data here)
+            const orientation = await getExifOrientation(file);
+
+            // Load image — try to get raw pixels without browser EXIF auto-rotation
+            const { img, needsManualRotation } = await loadImageForProcessing(file);
+            const applyOrientation = needsManualRotation ? orientation : 1;
+
             // Compress to fit within 5MB base64 API limit
             const MAX_BASE64_CHARS = 5 * 1024 * 1024;
             let base64 = "";
-            let imgWidth = 1200;
-            let quality = 0.90;
             let passes = 0;
 
-            // User is zooming in close on handwritten fields, so 1200px is plenty of detail.
-            // Smaller image = faster upload on mobile = faster total time.
-            base64 = resizeAndCompress(img, 1200, 0.90);
+            base64 = resizeAndCompress(img, 1200, 0.90, applyOrientation);
 
             if (base64.length > MAX_BASE64_CHARS) {
-                const steps = [
-                    [1200, 0.80], [1000, 0.85], [1000, 0.80]
-                ];
-
+                const steps = [[1200, 0.80], [1000, 0.85], [1000, 0.80]];
                 for (const [w, q] of steps) {
-                    base64 = resizeAndCompress(img, w, q);
-                    imgWidth = w;
-                    quality = q;
+                    base64 = resizeAndCompress(img, w, q, applyOrientation);
                     passes++;
                     if (base64.length <= MAX_BASE64_CHARS) break;
                 }
@@ -753,41 +748,142 @@
         }
     }
 
-    // Load an image file using createObjectURL (memory-efficient for large phone photos)
+    // ================================================================
+    // IMAGE PROCESSING — EXIF orientation + resize/compress
+    // ================================================================
+
+    // Read EXIF orientation tag from JPEG file (returns 1-8, default 1)
+    // Phones record gyroscope orientation here regardless of UI rotation state
+    function getExifOrientation(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const view = new DataView(e.target.result);
+                    if (view.getUint16(0, false) !== 0xFFD8) { resolve(1); return; }
+                    let offset = 2;
+                    while (offset < view.byteLength - 2) {
+                        const marker = view.getUint16(offset, false);
+                        offset += 2;
+                        if (marker === 0xFFE1) {
+                            if (view.getUint32(offset + 2, false) !== 0x45786966) { resolve(1); return; }
+                            const tiffStart = offset + 8;
+                            const bigEndian = view.getUint16(tiffStart, false) === 0x4D4D;
+                            const ifdOffset = view.getUint32(tiffStart + 4, bigEndian);
+                            const entries = view.getUint16(tiffStart + ifdOffset, bigEndian);
+                            for (let i = 0; i < entries; i++) {
+                                const entryOffset = tiffStart + ifdOffset + 2 + i * 12;
+                                if (view.getUint16(entryOffset, bigEndian) === 0x0112) {
+                                    resolve(view.getUint16(entryOffset + 8, bigEndian));
+                                    return;
+                                }
+                            }
+                            resolve(1); return;
+                        } else if ((marker & 0xFF00) === 0xFF00) {
+                            offset += view.getUint16(offset, false);
+                        } else { break; }
+                    }
+                } catch(e) {}
+                resolve(1);
+            };
+            // Only read first 64KB — EXIF is always near the start
+            reader.readAsArrayBuffer(file.slice(0, 65536));
+        });
+    }
+
+    // Load image, trying to get raw pixels WITHOUT browser EXIF auto-rotation
+    async function loadImageForProcessing(file) {
+        // Try createImageBitmap with imageOrientation:'none' (Chrome 93+, Firefox 98+)
+        // This gives raw sensor pixels so we can apply EXIF rotation ourselves
+        if (typeof createImageBitmap !== "undefined") {
+            try {
+                const bitmap = await createImageBitmap(file, { imageOrientation: "none" });
+                return { img: bitmap, needsManualRotation: true };
+            } catch(e) { /* option not supported (Safari), fall through */ }
+        }
+        // Fallback: regular Image loading — modern browsers auto-apply EXIF
+        return { img: await loadImageFromFile(file), needsManualRotation: false };
+    }
+
+    // Load image via object URL (browser applies EXIF automatically)
     function loadImageFromFile(file) {
         return new Promise((resolve, reject) => {
             const img = new Image();
             const url = URL.createObjectURL(file);
-            img.onload = function() {
-                URL.revokeObjectURL(url);
-                resolve(img);
-            };
-            img.onerror = function() {
-                URL.revokeObjectURL(url);
-                reject(new Error("Could not read the scanned image. Please try again."));
-            };
+            img.onload = function() { URL.revokeObjectURL(url); resolve(img); };
+            img.onerror = function() { URL.revokeObjectURL(url); reject(new Error("Could not read the scanned image.")); };
             img.src = url;
         });
     }
 
-    // Resize an image and return base64 JPEG
-    function resizeAndCompress(img, maxWidth, quality) {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
+    // Resize, apply EXIF rotation, and return base64 JPEG
+    // orientation: 1=normal, 3=180°, 6=90°CW, 8=90°CCW (others rare)
+    function resizeAndCompress(img, maxDim, quality, orientation) {
+        const srcW = img.width;
+        const srcH = img.height;
 
-        if (width > maxWidth) {
-            height = Math.round(height * (maxWidth / width));
-            width = maxWidth;
+        // For 90°/270° rotations, output dimensions are swapped
+        const swap = orientation >= 5 && orientation <= 8;
+        let outW = swap ? srcH : srcW;
+        let outH = swap ? srcW : srcH;
+
+        // Scale so longest edge fits within maxDim
+        const longest = Math.max(outW, outH);
+        if (longest > maxDim) {
+            const scale = maxDim / longest;
+            outW = Math.round(outW * scale);
+            outH = Math.round(outH * scale);
         }
 
-        canvas.width = width;
-        canvas.height = height;
+        const canvas = document.createElement("canvas");
+        canvas.width = outW;
+        canvas.height = outH;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
 
-        const dataUrl = canvas.toDataURL("image/jpeg", quality);
-        return dataUrl.split(",")[1];
+        // Apply EXIF orientation transform, then draw scaled image
+        switch (orientation) {
+            case 2: // Flip horizontal
+                ctx.translate(outW, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(img, 0, 0, outW, outH);
+                break;
+            case 3: // Rotate 180°
+                ctx.translate(outW, outH);
+                ctx.rotate(Math.PI);
+                ctx.drawImage(img, 0, 0, outW, outH);
+                break;
+            case 4: // Flip vertical
+                ctx.translate(0, outH);
+                ctx.scale(1, -1);
+                ctx.drawImage(img, 0, 0, outW, outH);
+                break;
+            case 5: // Rotate 90°CW + flip horizontal
+                ctx.translate(outW, 0);
+                ctx.rotate(Math.PI / 2);
+                ctx.scale(-1, 1);
+                ctx.drawImage(img, 0, 0, outH, outW);
+                break;
+            case 6: // Rotate 90°CW
+                ctx.translate(outW, 0);
+                ctx.rotate(Math.PI / 2);
+                ctx.drawImage(img, 0, 0, outH, outW);
+                break;
+            case 7: // Rotate 90°CCW + flip horizontal
+                ctx.translate(0, outH);
+                ctx.rotate(-Math.PI / 2);
+                ctx.scale(-1, 1);
+                ctx.drawImage(img, 0, 0, outH, outW);
+                break;
+            case 8: // Rotate 90°CCW
+                ctx.translate(0, outH);
+                ctx.rotate(-Math.PI / 2);
+                ctx.drawImage(img, 0, 0, outH, outW);
+                break;
+            default: // 1 = normal, no rotation
+                ctx.drawImage(img, 0, 0, outW, outH);
+        }
+
+        return canvas.toDataURL("image/jpeg", quality).split(",")[1];
     }
 
     // ================================================================
