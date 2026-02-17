@@ -258,7 +258,8 @@
             color: var(--gray-800);
             margin-bottom: 4px;
         }
-        .scan-hint { font-size: 0.85rem; color: var(--gray-600); }
+        .scan-hint { font-size: 0.85rem; color: var(--gray-600); font-weight: 600; }
+        .scan-privacy { font-size: 0.75rem; color: var(--gray-600); margin-top: 8px; font-style: italic; }
 
         /* ===== PROCESSING OVERLAY ===== */
         .processing-overlay {
@@ -462,7 +463,8 @@
             <div id="scanArea" class="scan-area" onclick="document.getElementById('scanFile').click()">
                 <div class="scan-icon">🔍</div>
                 <div class="scan-text">Tap to scan form</div>
-                <div class="scan-hint">Your phone will open a scanner — the scan is used only to read the text and is never saved or stored</div>
+                <div id="scanHint" class="scan-hint">Get as close to the form as you can while keeping name, address, and date of birth visible.</div>
+                <div class="scan-privacy">The scan is used only to read the text and is never saved or stored.</div>
             </div>
 
             <!-- Hidden file input with native camera capture -->
@@ -688,20 +690,17 @@
             // Compress to fit within 5MB base64 API limit
             const MAX_BASE64_CHARS = 5 * 1024 * 1024;
             let base64 = "";
-            let imgWidth = 1568;
-            let quality = 0.92;
+            let imgWidth = 1200;
+            let quality = 0.90;
             let passes = 0;
 
-            // Claude's vision model internally downscales to max 1568px on longest edge.
-            // Sending larger images just wastes upload time and gets double-compressed.
-            // Target 1568px at high quality for best results.
-            base64 = resizeAndCompress(img, 1568, 0.92);
+            // User is zooming in close on handwritten fields, so 1200px is plenty of detail.
+            // Smaller image = faster upload on mobile = faster total time.
+            base64 = resizeAndCompress(img, 1200, 0.90);
 
             if (base64.length > MAX_BASE64_CHARS) {
-                // Shouldn't happen at 1568px, but just in case
                 const steps = [
-                    [1568, 0.85], [1568, 0.80],
-                    [1200, 0.85], [1200, 0.80]
+                    [1200, 0.80], [1000, 0.85], [1000, 0.80]
                 ];
 
                 for (const [w, q] of steps) {
@@ -816,6 +815,15 @@
 
         // Configure DOB fields for review step based on state
         configureDOBFields();
+
+        // Set scan guidance based on state
+        let scanTip = "Get as close to the form as you can while keeping name, address, and date of birth visible.";
+        if (state === "Georgia") {
+            scanTip = "Get as close to the form as you can while keeping name, address, and year of birth visible.";
+        } else if (state === "North Carolina") {
+            scanTip = "Get as close to the form as you can while keeping name and address visible.";
+        }
+        document.getElementById("scanHint").textContent = scanTip;
 
         // Show scan step
         document.getElementById("step1").classList.add("hidden");
