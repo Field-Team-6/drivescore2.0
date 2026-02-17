@@ -371,7 +371,7 @@
         <img src="https://drive-scout.netlify.app/images/FT6Logo2.png" alt="Field Team 6 Logo" class="header-logo">
         <h1>Drive Score</h1>
     </div>
-    <div class="tagline">Report your voter drive results. Every voter counts!</div>
+    <div class="tagline">Report your drive results. Every voter counts!</div>
     <div class="tagline-italic">Because in this game, the high score is saving our democracy.</div>
 </div>
 
@@ -463,7 +463,7 @@
             <div id="scanArea" class="scan-area" onclick="document.getElementById('scanFile').click()">
                 <div class="scan-icon">🔍</div>
                 <div class="scan-text">Tap to scan form</div>
-                <div id="scanHint" class="scan-hint">Get as close to the form as you can while keeping name, address, and date of birth visible.</div>
+                <div id="scanHint" class="scan-hint">Get as close to the form as you can while keeping name, address, and date of birth visible. (Turning the phone sideways helps!)</div>
                 <div class="scan-privacy">The scan is used only to read the text and is never saved or stored.</div>
             </div>
 
@@ -817,11 +817,11 @@
         configureDOBFields();
 
         // Set scan guidance based on state
-        let scanTip = "Get as close to the form as you can while keeping name, address, and date of birth visible.";
+        let scanTip = "Get as close to the form as you can while keeping name, address, and date of birth visible. (Turning the phone sideways helps!)";
         if (state === "Georgia") {
-            scanTip = "Get as close to the form as you can while keeping name, address, and year of birth visible.";
+            scanTip = "Get as close to the form as you can while keeping name, address, and year of birth visible. (Turning the phone sideways helps!)";
         } else if (state === "North Carolina") {
-            scanTip = "Get as close to the form as you can while keeping name and address visible.";
+            scanTip = "Get as close to the form as you can while keeping name and address visible. (Turning the phone sideways helps!)";
         }
         document.getElementById("scanHint").textContent = scanTip;
 
