@@ -688,18 +688,20 @@
             // Compress to fit within 5MB base64 API limit
             const MAX_BASE64_CHARS = 5 * 1024 * 1024;
             let base64 = "";
-            let imgWidth = img.width;
-            let quality = 1.0;
+            let imgWidth = 1568;
+            let quality = 0.92;
             let passes = 0;
 
-            // Try full quality first — only compress if over API limit
-            base64 = resizeAndCompress(img, 4000, 0.95);
+            // Claude's vision model internally downscales to max 1568px on longest edge.
+            // Sending larger images just wastes upload time and gets double-compressed.
+            // Target 1568px at high quality for best results.
+            base64 = resizeAndCompress(img, 1568, 0.92);
 
             if (base64.length > MAX_BASE64_CHARS) {
+                // Shouldn't happen at 1568px, but just in case
                 const steps = [
-                    [3200, 0.92], [3200, 0.88], [3200, 0.85], [3200, 0.80],
-                    [2800, 0.88], [2800, 0.85], [2800, 0.80],
-                    [2400, 0.88], [2400, 0.85], [2400, 0.80]
+                    [1568, 0.85], [1568, 0.80],
+                    [1200, 0.85], [1200, 0.80]
                 ];
 
                 for (const [w, q] of steps) {
@@ -712,10 +714,7 @@
             }
 
             const sizeMB = (base64.length / 1024 / 1024).toFixed(1);
-            document.querySelector(".processing-subtext").textContent = 
-                passes === 0
-                    ? `Full quality · ${sizeMB}MB`
-                    : `${imgWidth}px @ ${Math.round(quality*100)}% · ${sizeMB}MB`;
+            document.querySelector(".processing-subtext").textContent = `${sizeMB}MB`;
 
             // Send to Netlify function (direct to Claude API — no Apps Script middleman)
             const response = await fetch(EXTRACT_URL, {
