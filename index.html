@@ -635,6 +635,7 @@
     // data submission — the "action" field tells it what to do.
     // ============================================================
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQOTtO__-vM11NtUgJrcqKbmDbZBmuzbs-TcN5HeSxELDaLhs27D9EyBdgknUTfIft/exec";
+    const EXTRACT_URL = "/.netlify/functions/extract";
     // ============================================================
 
     // ---- State ----
@@ -710,13 +711,11 @@
             document.querySelector(".processing-subtext").textContent = 
                 `${imgWidth}px @ ${Math.round(quality*100)}% · ${sizeMB}MB`;
 
-            // Send to backend
-            const response = await fetch(GOOGLE_SCRIPT_URL, {
+            // Send to Netlify function (direct to Claude API — no Apps Script middleman)
+            const response = await fetch(EXTRACT_URL, {
                 method: "POST",
-                redirect: "follow",
-                headers: { "Content-Type": "text/plain" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    action: "extract",
                     image: base64,
                     state: selectedState
                 })
