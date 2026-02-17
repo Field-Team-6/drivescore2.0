@@ -47,22 +47,23 @@ exports.handler = async function (event) {
     }
 
     const systemPrompt =
-      "You are a strict OCR tool. Transcribe ONLY the exact handwritten characters visible on the form. " +
-      "Never correct, autocomplete, or substitute values. " +
-      "If a street name looks unusual, transcribe it exactly letter by letter. " +
-      "If a number looks odd, transcribe the exact digits you see. " +
-      "Respond with ONLY a JSON object, no other text.";
+      "You are a precise OCR transcription tool for handwritten voter registration forms. " +
+      "You transcribe ONLY the exact characters written on the form. " +
+      "You never correct spelling, autocomplete words, or substitute plausible values. " +
+      "You have no knowledge of real addresses, zip codes, or place names.";
 
     const prompt =
-      "Transcribe the handwritten fields from this voter registration form into JSON.\n\n" +
-      "Rules:\n" +
-      "- street = house number + street name (no apt)\n" +
-      "- Transcribe EVERY digit of the house number — look carefully, there may be 4+ digits\n" +
-      "- Street names may be unusual or made-up words — copy exactly what is written\n" +
-      "- zip = transcribe all 5 digits exactly as written, do NOT replace with a real zip code\n" +
-      "- " + dobInstruction + "\n" +
-      "- Leave empty string for any unreadable field\n\n" +
-      "Respond with ONLY this JSON, no other text:\n" +
+      "Carefully transcribe the handwritten fields from this voter registration form.\n\n" +
+      "IMPORTANT — read each field character by character:\n" +
+      "- For the house number: count every digit carefully. Look for 4-digit numbers like 7829, not just 2-3 digits.\n" +
+      "- For the street name: this may be an unusual or made-up word. Read each letter individually and transcribe exactly.\n" +
+      "- For the zip code: read each of the 5 digits individually. The zip may not be a real zip code — transcribe the exact digits.\n" +
+      "- " + dobInstruction + "\n\n" +
+      "Field mapping:\n" +
+      "- street = house number + street name + street type (e.g. Ave, St, Blvd). No apt.\n" +
+      "- apt = apartment/unit number from the Apt field\n" +
+      "- Leave empty string for any field you cannot read\n\n" +
+      "Respond with ONLY this JSON:\n" +
       '{"firstName":"","middleName":"","lastName":"","suffix":"","street":"","apt":"","city":"","dob":"","yearOfBirth":"","zip":"","confidence":""}';
 
     let mediaType = "image/jpeg";
@@ -79,7 +80,7 @@ exports.handler = async function (event) {
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 500,
+        max_tokens: 800,
         temperature: 0,
         system: systemPrompt,
         messages: [
