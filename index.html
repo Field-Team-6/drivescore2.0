@@ -199,6 +199,20 @@
         }
         .btn-done:hover { border-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.05); }
 
+        .btn-rescan {
+            display: block;
+            width: 100%;
+            margin-top: 16px;
+            padding: 10px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-rescan:hover { color: rgba(255,255,255,0.8); }
+
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -598,6 +612,10 @@
 
         <button type="button" class="btn btn-done" onclick="submitVoterAndFinish()" style="margin-top:8px;">
             ✅ Submit & Finish (Last Form)
+        </button>
+
+        <button type="button" class="btn-rescan" onclick="rescanForm()">
+            🔄 Scan this form again
         </button>
     </div>
 
@@ -1178,6 +1196,14 @@
     // ================================================================
     // RESET & UTILITIES
     // ================================================================
+    // Go back to scan step to re-scan the same form
+    function rescanForm() {
+        resetScanStep();
+        document.getElementById("step3").classList.add("hidden");
+        document.getElementById("step2").classList.remove("hidden");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     function resetScanStep() {
         document.getElementById("scanFile").value = "";
         document.getElementById("scanArea").style.display = "block";
