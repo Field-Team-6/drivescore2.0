@@ -688,28 +688,34 @@
             // Compress to fit within 5MB base64 API limit
             const MAX_BASE64_CHARS = 5 * 1024 * 1024;
             let base64 = "";
-            let imgWidth = 0;
-            let quality = 0;
+            let imgWidth = img.width;
+            let quality = 1.0;
             let passes = 0;
 
-            // Try progressively smaller sizes until under limit
-            const steps = [
-                [3200, 0.92], [3200, 0.88], [3200, 0.85], [3200, 0.80],
-                [2800, 0.88], [2800, 0.85], [2800, 0.80],
-                [2400, 0.88], [2400, 0.85], [2400, 0.80]
-            ];
+            // Try full quality first — only compress if over API limit
+            base64 = resizeAndCompress(img, 4000, 0.95);
 
-            for (const [w, q] of steps) {
-                base64 = resizeAndCompress(img, w, q);
-                imgWidth = w;
-                quality = q;
-                passes++;
-                if (base64.length <= MAX_BASE64_CHARS) break;
+            if (base64.length > MAX_BASE64_CHARS) {
+                const steps = [
+                    [3200, 0.92], [3200, 0.88], [3200, 0.85], [3200, 0.80],
+                    [2800, 0.88], [2800, 0.85], [2800, 0.80],
+                    [2400, 0.88], [2400, 0.85], [2400, 0.80]
+                ];
+
+                for (const [w, q] of steps) {
+                    base64 = resizeAndCompress(img, w, q);
+                    imgWidth = w;
+                    quality = q;
+                    passes++;
+                    if (base64.length <= MAX_BASE64_CHARS) break;
+                }
             }
 
             const sizeMB = (base64.length / 1024 / 1024).toFixed(1);
             document.querySelector(".processing-subtext").textContent = 
-                `${imgWidth}px @ ${Math.round(quality*100)}% · ${sizeMB}MB`;
+                passes === 0
+                    ? `Full quality · ${sizeMB}MB`
+                    : `${imgWidth}px @ ${Math.round(quality*100)}% · ${sizeMB}MB`;
 
             // Send to Netlify function (direct to Claude API — no Apps Script middleman)
             const response = await fetch(EXTRACT_URL, {
@@ -731,11 +737,6 @@
 
             if (result.error) {
                 throw new Error(result.error);
-            }
-
-            // Reassemble ZIP from individual digits if present
-            if (result.zipDigit1 !== undefined) {
-                result.zip = (result.zipDigit1 || "") + (result.zipDigit2 || "") + (result.zipDigit3 || "") + (result.zipDigit4 || "") + (result.zipDigit5 || "");
             }
 
             populateReviewForm(result);
