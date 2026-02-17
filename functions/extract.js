@@ -4,7 +4,7 @@
 // Set CLAUDE_API_KEY in Netlify environment variables
 // ============================================================
 
-const CLAUDE_MODEL = "claude-haiku-4-5-20251001";
+const CLAUDE_MODEL = "claude-sonnet-4-5-20250929";
 
 exports.handler = async function (event) {
   const headers = {
