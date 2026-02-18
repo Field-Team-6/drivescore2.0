@@ -627,11 +627,11 @@
                 </div>
             </div>
 
-            <!-- Georgia: Year of Birth only -->
+            <!-- Georgia / Colorado: Year of Birth only -->
             <div id="yobField" class="field hidden">
                 <label for="vYOB">Year of Birth <span class="req">*</span></label>
                 <input type="text" id="vYOB" placeholder="e.g. 2004">
-                <div class="field-hint">Georgia requires year of birth only</div>
+                <div class="field-hint">Georgia and Colorado require year of birth only</div>
             </div>
         </div>
 
@@ -998,7 +998,7 @@
 
         // Set scan guidance based on state
         let scanTip = "Get as close to the form as you can while keeping name, address, and date of birth visible. (Turning the phone sideways helps!)";
-        if (state === "Georgia") {
+        if (state === "Georgia" || state === "Colorado") {
             scanTip = "Get as close to the form as you can while keeping name, address, and year of birth visible. (Turning the phone sideways helps!)";
         } else if (state === "North Carolina") {
             scanTip = "Get as close to the form as you can while keeping name and address visible. (Turning the phone sideways helps!)";
@@ -1022,7 +1022,7 @@
         const dobField = document.getElementById("dobField");
         const yobField = document.getElementById("yobField");
 
-        if (selectedState === "Georgia") {
+        if (selectedState === "Georgia" || selectedState === "Colorado") {
             dobField.classList.add("hidden");
             yobField.classList.remove("hidden");
         } else if (selectedState === "North Carolina") {
@@ -1050,7 +1050,7 @@
         document.getElementById("vZip").value = data.zip || "";
 
         // Handle DOB based on state
-        if (selectedState === "Georgia") {
+        if (selectedState === "Georgia" || selectedState === "Colorado") {
             document.getElementById("vYOB").value = data.yearOfBirth || "";
         } else if (selectedState !== "North Carolina") {
             // Standard DOB — parse and set the 3 dropdowns
@@ -1132,7 +1132,7 @@
         }
 
         // Validate state-specific DOB
-        if (selectedState === "Georgia") {
+        if (selectedState === "Georgia" || selectedState === "Colorado") {
             const yob = document.getElementById("vYOB").value.trim();
             if (!yob || !/^\d{4}$/.test(yob)) {
                 showError("reviewError", "Please enter a valid 4-digit year of birth.");
@@ -1165,7 +1165,7 @@
             gaYOB: ""
         };
 
-        if (selectedState === "Georgia") {
+        if (selectedState === "Georgia" || selectedState === "Colorado") {
             voterData.gaYOB = document.getElementById("vYOB").value.trim();
         } else if (selectedState !== "North Carolina") {
             const m = document.getElementById("vDOBMonth").value;
