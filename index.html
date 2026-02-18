@@ -661,10 +661,10 @@
                 You submitted <strong id="finalCount">0</strong> voter<span id="finalPlural">s</span> from this drive.
             </p>
             <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 24px;">
-                Every voter counts. Thank you for your work! 🗳️
+                That is <strong id="finalCount2">0</strong> more vote<span id="finalPlural2">s</span> for sanity, humanity, and democracy. Thank you for this great work – keep going! 🗳️
             </p>
             <button type="button" class="btn btn-continue" onclick="startNewDrive()">
-                🔄 Start a New Drive
+                🔄 Restart Drive Score
             </button>
         </div>
     </div>
@@ -1286,6 +1286,8 @@
         document.getElementById("step4").classList.remove("hidden");
         document.getElementById("finalCount").textContent = voterCount;
         document.getElementById("finalPlural").textContent = voterCount === 1 ? "" : "s";
+        document.getElementById("finalCount2").textContent = voterCount;
+        document.getElementById("finalPlural2").textContent = voterCount === 1 ? "" : "s";
         window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
