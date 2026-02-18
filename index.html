@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive Score — Field Team 6</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Open+Sans:wght@400;500;600&family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --blue-dark: #1a2744;
@@ -33,7 +33,7 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Raleway', 'Open Sans', sans-serif;
             background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue-mid) 50%, #1e3a5f 100%);
             min-height: 100vh;
             color: var(--gray-800);
@@ -120,7 +120,7 @@
             border: 2px solid var(--gray-200);
             border-radius: 8px;
             font-size: 1rem;
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Raleway', 'Open Sans', sans-serif;
             color: var(--gray-800);
             background: var(--gray-50);
             transition: border-color 0.2s, box-shadow 0.2s;
@@ -363,6 +363,35 @@
         /* ===== HIDDEN ===== */
         .hidden { display: none !important; }
 
+        /* ===== FAQ ===== */
+        .faq-btn-wrapper { text-align: center; margin: 30px 0 20px; }
+        .faq-toggle-btn {
+            background: #03013c; color: white; padding: 12px 25px; border: none;
+            border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold;
+            font-family: 'Raleway', sans-serif; transition: all 0.3s ease;
+        }
+        .faq-toggle-btn:hover { background: #1a1a5e; transform: translateY(-2px); }
+        .faq-container {
+            display: none; background: white; border-radius: 15px;
+            padding: 30px; margin: 20px auto; max-width: 720px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .faq-container.show { display: block; }
+        .faq-header { text-align: center; margin-bottom: 30px; }
+        .faq-header h2 { color: #333; font-size: 2rem; margin-bottom: 10px; font-family: 'Montserrat', sans-serif; }
+        .faq-close {
+            background: var(--blue-bright); color: white; border: none;
+            padding: 10px 20px; border-radius: 8px; cursor: pointer;
+            font-weight: bold; font-family: 'Raleway', sans-serif; transition: all 0.3s ease;
+        }
+        .faq-close:hover { background: var(--blue-mid); transform: translateY(-2px); }
+        .faq-item { margin-bottom: 25px; border-bottom: 1px solid #e1e5e9; padding-bottom: 20px; }
+        .faq-item:last-child { border-bottom: none; }
+        .faq-question { font-weight: bold; color: #333; font-size: 1.1rem; margin-bottom: 10px; }
+        .faq-answer { color: #666; line-height: 1.6; font-size: 0.95rem; }
+        .faq-answer a { color: var(--blue-bright); text-decoration: none; font-weight: 600; }
+        .faq-answer a:hover { text-decoration: underline; }
+
         /* ===== FOOTER ===== */
         .footer { text-align: center; padding: 20px; color: rgba(255,255,255,0.5); font-size: 0.78rem; line-height: 1.7; }
         .footer a { color: rgba(255,255,255,0.7); text-decoration: none; }
@@ -374,6 +403,8 @@
             .row-4 { grid-template-columns: 1fr 1fr; }
             .header-top { gap: 12px; }
             .header-logo { height: 72px; }
+            .faq-container { margin: 10px; padding: 20px; }
+            .faq-header h2 { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -401,11 +432,11 @@
 
             <div class="row">
                 <div class="field">
-                    <label for="leaderFirst">Your First Name <span class="req">*</span></label>
+                    <label for="leaderFirst">Drive Leader First Name <span class="req">*</span></label>
                     <input type="text" id="leaderFirst" placeholder="e.g. Jane" required>
                 </div>
                 <div class="field">
-                    <label for="leaderLast">Your Last Name <span class="req">*</span></label>
+                    <label for="leaderLast">Drive Leader Last Name <span class="req">*</span></label>
                     <input type="text" id="leaderLast" placeholder="e.g. Smith" required>
                 </div>
             </div>
@@ -640,9 +671,44 @@
 
 </div>
 
+<!-- ===== FAQ ===== -->
+<div class="faq-btn-wrapper">
+    <button class="faq-toggle-btn" onclick="toggleFAQ()">FAQ</button>
+</div>
+
+<div class="faq-container" id="faqContainer">
+    <div class="faq-header">
+        <h2>🎯 Drive Score FAQ</h2>
+        <button class="faq-close" onclick="toggleFAQ()">Close FAQ</button>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Why do you need this info?</div>
+        <div class="faq-answer">
+            We need this basic info 1) to calculate how many voters we're registering, and 2) so we can find out if they voted or not after the next election! You and our thousands of volunteers are doing so much good, but if we can't measure that good so we can tell the world, we can't get more volunteers and donors.<br><br>
+            <em>Reporting your Drive Score is literally what keeps Field Team 6 alive and thriving!</em>
+        </div>
+    </div>
+
+    <div class="faq-item">
+        <div class="faq-question">Are my Drive Score results shared with the Democratic Party, any campaign, or any list?</div>
+        <div class="faq-answer">
+            Absolutely not. Drive Score is a project of <a href="https://www.fieldteam6.org" target="_blank">Field Team 6</a>, a proudly partisan voter registration organization. Our legal designation is a 527 federal PAC working on the IE side.
+        </div>
+    </div>
+
+    <p style="text-align:center; margin-top: 20px;">
+        <strong>Any questions or feedback? Contact us at: <a href="mailto:info@FieldTeam6.org" style="color: var(--blue-bright); text-decoration: none;">info@FieldTeam6.org</a></strong>
+    </p>
+    <p style="text-align:center; margin-top: 10px;">
+        <em style="color: var(--blue-bright); font-weight: 600;">Thank you for registering Democrats, and saving the world!</em>
+    </p>
+</div>
+
 <!-- ===== FOOTER ===== -->
 <div class="footer">
-    ©2025 Drive Score — A <a href="https://www.fieldteam6.org" target="_blank">Field Team 6</a> Tool<br>
+    ©2026 Drive Score<br>
+    Paid for by Field Team 6. <a href="https://www.fieldteam6.org" target="_blank">www.fieldteam6.org</a>.<br>
     Not authorized by any candidate or candidate's committee.
 </div>
 
@@ -1278,6 +1344,18 @@
         if (h > 12) h -= 12;
         if (h === 0) h = 12;
         return `${h}:${m} ${ampm}`;
+    }
+    // ---- FAQ toggle ----
+    function toggleFAQ() {
+        const faqContainer = document.getElementById('faqContainer');
+        if (faqContainer) {
+            faqContainer.classList.toggle('show');
+            if (faqContainer.classList.contains('show')) {
+                setTimeout(() => {
+                    faqContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
     }
 </script>
 
