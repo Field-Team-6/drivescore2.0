@@ -1760,6 +1760,7 @@
 
         let uploaded = 0;
         let failed = 0;
+        let lastError = "";
 
         try {
             // Upload drive photos
@@ -1773,7 +1774,7 @@
                     const base64 = await compressPhotoForUpload(photo.file);
                     const filename = buildPhotoFilename("drive", driveNum);
 
-                    await fetch(GOOGLE_SCRIPT_URL, {
+                    const resp = await fetch(GOOGLE_SCRIPT_URL, {
                         method: "POST",
                         redirect: "follow",
                         headers: { "Content-Type": "text/plain" },
@@ -1784,9 +1785,17 @@
                             base64: base64
                         })
                     });
+                    const respText = await resp.text();
+                    // Google Apps Script sometimes returns HTML instead of JSON on errors
+                    if (respText.trim().startsWith("<")) {
+                        throw new Error("Server returned HTML instead of JSON — the Apps Script may need redeployment.");
+                    }
+                    const respJson = JSON.parse(respText);
+                    if (respJson.error) throw new Error(respJson.error);
                     uploaded++;
                 } catch (err) {
                     console.error("Drive photo upload failed:", err);
+                    lastError = err.message;
                     failed++;
                     uploaded++;
                 }
@@ -1803,7 +1812,7 @@
                     const base64 = await compressPhotoForUpload(photo.file);
                     const filename = buildPhotoFilename("signup", signupNum);
 
-                    await fetch(GOOGLE_SCRIPT_URL, {
+                    const resp = await fetch(GOOGLE_SCRIPT_URL, {
                         method: "POST",
                         redirect: "follow",
                         headers: { "Content-Type": "text/plain" },
@@ -1814,26 +1823,39 @@
                             base64: base64
                         })
                     });
+                    const respText = await resp.text();
+                    if (respText.trim().startsWith("<")) {
+                        throw new Error("Server returned HTML instead of JSON — the Apps Script may need redeployment.");
+                    }
+                    const respJson = JSON.parse(respText);
+                    if (respJson.error) throw new Error(respJson.error);
                     uploaded++;
                 } catch (err) {
                     console.error("Signup photo upload failed:", err);
+                    lastError = err.message;
                     failed++;
                     uploaded++;
                 }
             }
 
             progressBar.style.width = "100%";
+            totalPhotosSent = total - failed;
 
-            if (failed > 0) {
+            if (failed === total) {
+                // ALL uploads failed — stay on this screen so user can see the error
+                progressEl.classList.remove("active");
+                showError("photoUploadError", "Upload failed: " + lastError + "\n\nMake sure the Apps Script has been redeployed with the new version. You can skip photos for now and try again next time.");
+                document.getElementById("sendPhotosBtn").disabled = false;
+                document.querySelector(".btn-skip-photos").style.display = "";
+                return;
+            } else if (failed > 0) {
                 progressText.textContent = `Done! ${total - failed} of ${total} uploaded (${failed} failed).`;
             } else {
                 progressText.textContent = `All ${total} photo${total === 1 ? "" : "s"} uploaded!`;
             }
 
-            totalPhotosSent = total - failed;
-
             // Brief pause to show completion, then move on
-            await new Promise(r => setTimeout(r, 1200));
+            await new Promise(r => setTimeout(r, 1500));
 
             // Clean up object URLs
             drivePhotos.forEach(p => { if (p) URL.revokeObjectURL(p.objectURL); });
