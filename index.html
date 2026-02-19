@@ -1786,6 +1786,9 @@
                         })
                     });
                     const respText = await resp.text();
+                    // DEBUG: Show server response (remove after testing)
+                    progressText.textContent = "Server says: " + respText.substring(0, 200);
+                    await new Promise(r => setTimeout(r, 3000));
                     // Google Apps Script sometimes returns HTML instead of JSON on errors
                     if (respText.trim().startsWith("<")) {
                         throw new Error("Server returned HTML instead of JSON — the Apps Script may need redeployment.");
@@ -1851,7 +1854,7 @@
             } else if (failed > 0) {
                 progressText.textContent = `Done! ${total - failed} of ${total} uploaded (${failed} failed).`;
             } else {
-                progressText.textContent = `All ${total} photo${total === 1 ? "" : "s"} uploaded!`;
+                progressText.textContent = `${total} photo${total === 1 ? "" : "s"} uploaded!`;
             }
 
             // Brief pause to show completion, then move on
