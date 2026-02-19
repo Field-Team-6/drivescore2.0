@@ -817,17 +817,17 @@
     <!-- ========================================== -->
     <div id="step4" class="hidden">
         <div class="card">
-            <div class="card-title" style="justify-content: center; font-size: 1.15rem;">
-                <span class="icon">📸</span> Share Photos from Your Drive
-            </div>
+            <p style="color: var(--gray-800); text-align: center; margin-bottom: 8px; font-size: 0.95rem; font-weight: 700;">
+                We can't wait to see photos of your drive, and of your volunteer sign-up sheets!
+            </p>
             <p style="color: var(--gray-600); text-align: center; margin-bottom: 24px; font-size: 0.92rem;">
-                Do you have any photos from today's drive or volunteer sign-up sheets? Adding these helps Field Team 6 celebrate and track your amazing work!
+                These help Field Team 6 celebrate and grow your incredible work!
             </p>
 
             <!-- Drive Photos Section -->
             <div class="photo-section">
-                <div class="photo-section-title">📸 Voter Drive Photos</div>
-                <div class="photo-section-hint">Photos of volunteers, the event, your table setup, etc.</div>
+                <div class="photo-section-title">Voter Drive Photos</div>
+                <div class="photo-section-hint">Can be volunteers, the event, selfies, your voter drive kit... we love to see it and post it!</div>
                 <div class="photo-btn-row">
                     <label class="btn-photo" onclick="document.getElementById('drivePhotoCam').click()">
                         <span class="photo-btn-icon">📷</span> Take Photo
@@ -846,8 +846,8 @@
 
             <!-- Signup Sheet Photos Section -->
             <div class="photo-section">
-                <div class="photo-section-title">📋 Volunteer Sign-Up Sheets</div>
-                <div class="photo-section-hint">Photos of any sign-up sheets from today's drive.</div>
+                <div class="photo-section-title">Volunteer Sign-Up Sheets</div>
+                <div class="photo-section-hint">Let's grow this movement!</div>
                 <div class="photo-btn-row">
                     <label class="btn-photo" onclick="document.getElementById('signupPhotoCam').click()">
                         <span class="photo-btn-icon">📷</span> Take Photo
@@ -867,7 +867,7 @@
             📤 Send to Field Team 6
         </button>
 
-        <button type="button" class="btn btn-skip-photos" onclick="skipPhotos()">
+        <button type="button" class="btn btn-skip-photos" id="skipPhotosBtn" onclick="skipPhotos()">
             Skip — No Photos This Time
         </button>
 
@@ -1539,6 +1539,7 @@
         document.getElementById("drivePhotoCount").textContent = "";
         document.getElementById("signupPhotoCount").textContent = "";
         document.getElementById("sendPhotosBtn").disabled = false;
+        document.getElementById("skipPhotosBtn").style.display = "";
         document.getElementById("uploadProgress").classList.remove("active");
         hideError("photoUploadError");
         updateSendButtonState();
@@ -1749,7 +1750,7 @@
 
         // Disable buttons
         document.getElementById("sendPhotosBtn").disabled = true;
-        document.querySelector(".btn-skip-photos").style.display = "none";
+        document.getElementById("skipPhotosBtn").style.display = "none";
         hideError("photoUploadError");
 
         // Show progress
@@ -1786,9 +1787,6 @@
                         })
                     });
                     const respText = await resp.text();
-                    // DEBUG: Show server response (remove after testing)
-                    progressText.textContent = "Server says: " + respText.substring(0, 200);
-                    await new Promise(r => setTimeout(r, 3000));
                     // Google Apps Script sometimes returns HTML instead of JSON on errors
                     if (respText.trim().startsWith("<")) {
                         throw new Error("Server returned HTML instead of JSON — the Apps Script may need redeployment.");
@@ -1849,7 +1847,7 @@
                 progressEl.classList.remove("active");
                 showError("photoUploadError", "Upload failed: " + lastError + "\n\nMake sure the Apps Script has been redeployed with the new version. You can skip photos for now and try again next time.");
                 document.getElementById("sendPhotosBtn").disabled = false;
-                document.querySelector(".btn-skip-photos").style.display = "";
+                document.getElementById("skipPhotosBtn").style.display = "";
                 return;
             } else if (failed > 0) {
                 progressText.textContent = `Done! ${total - failed} of ${total} uploaded (${failed} failed).`;
@@ -1869,7 +1867,7 @@
         } catch (err) {
             showError("photoUploadError", "Upload failed: " + err.message + ". You can try again.");
             document.getElementById("sendPhotosBtn").disabled = false;
-            document.querySelector(".btn-skip-photos").style.display = "";
+            document.getElementById("skipPhotosBtn").style.display = "";
             progressEl.classList.remove("active");
         }
     }
