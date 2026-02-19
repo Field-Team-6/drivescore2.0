@@ -392,6 +392,31 @@
         .faq-answer a { color: var(--blue-bright); text-decoration: none; font-weight: 600; }
         .faq-answer a:hover { text-decoration: underline; }
 
+        /* ===== CONFETTI ===== */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        .confetti-piece {
+            position: absolute;
+            top: -20px;
+            width: 10px;
+            height: 16px;
+            border-radius: 2px;
+            animation: confetti-fall linear forwards;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+            75% { opacity: 1; }
+            100% { transform: translateY(105vh) rotate(720deg) scale(0.6); opacity: 0; }
+        }
+
         /* ===== FOOTER ===== */
         .footer { text-align: center; padding: 20px; color: rgba(255,255,255,0.5); font-size: 0.78rem; line-height: 1.7; }
         .footer a { color: rgba(255,255,255,0.7); text-decoration: none; }
@@ -1540,6 +1565,60 @@
         }
 
         window.scrollTo({ top: 0, behavior: "smooth" });
+        launchConfetti();
+    }
+
+    function launchConfetti() {
+        const container = document.createElement("div");
+        container.className = "confetti-container";
+        document.body.appendChild(container);
+
+        const colors = [
+            "#f5c542", // FT6 gold
+            "#3a7bd5", // FT6 blue
+            "#5b9ef0", // light blue
+            "#27ae60", // green
+            "#e74c3c", // red
+            "#ffffff", // white
+            "#2b4c7e", // dark blue
+            "#f39c12", // orange
+        ];
+
+        const pieceCount = 80;
+
+        for (let i = 0; i < pieceCount; i++) {
+            const piece = document.createElement("div");
+            piece.className = "confetti-piece";
+
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            const left = Math.random() * 100;
+            const duration = 2.5 + Math.random() * 2;
+            const delay = Math.random() * 1.5;
+            const size = 6 + Math.random() * 8;
+            const shape = Math.random();
+
+            piece.style.left = left + "%";
+            piece.style.width = size + "px";
+            piece.style.height = (size * (1 + Math.random())) + "px";
+            piece.style.background = color;
+            piece.style.animationDuration = duration + "s";
+            piece.style.animationDelay = delay + "s";
+
+            // Mix of rectangles, squares, and circles
+            if (shape < 0.33) {
+                piece.style.borderRadius = "50%";
+            } else if (shape < 0.66) {
+                piece.style.borderRadius = "2px";
+            } else {
+                piece.style.height = size + "px";
+                piece.style.borderRadius = "1px";
+            }
+
+            container.appendChild(piece);
+        }
+
+        // Clean up after animation completes
+        setTimeout(() => container.remove(), 5500);
     }
 
     // ================================================================
