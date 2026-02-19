@@ -1873,4 +1873,11 @@
         const faqContainer = document.getElementById('faqContainer');
         if (faqContainer) {
             faqContainer.classList.toggle('show');
-            if (faqCon
+            if (faqContainer.classList.contains('show')) {
+                faqContainer.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    }
+</script>
+</body>
+</html>
