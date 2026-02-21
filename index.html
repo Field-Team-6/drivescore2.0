@@ -89,11 +89,24 @@
             text-align: center;
             font-size: 0.9rem;
             color: var(--gray-800);
+            font-weight: 700;
             line-height: 1.5;
         }
-        .chrome-banner strong {
-            color: var(--blue-dark);
+        .chrome-banner .chrome-copy-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 8px 18px;
+            background: var(--blue-bright);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
+        .chrome-copy-btn:hover { background: var(--blue-mid); transform: translateY(-1px); }
         .chrome-banner .chrome-banner-close {
             display: inline-block;
             margin-left: 8px;
@@ -102,7 +115,7 @@
             font-size: 1.1rem;
             cursor: pointer;
             color: var(--gray-600);
-            vertical-align: middle;
+            vertical-align: top;
         }
         .chrome-banner .chrome-banner-close:hover { color: var(--gray-800); }
 
@@ -610,8 +623,10 @@
 
 <!-- ===== MAIN ===== -->
 <div class="chrome-banner" id="chromeBanner">
-    ⚡ <strong>For the best experience, open Drive Score in Safari.</strong> Chrome on iPhone has a known camera issue.
+    ⚡ For the best experience, open Drive Score in Safari. Chrome on iPhone has a known camera issue.
     <button class="chrome-banner-close" onclick="document.getElementById('chromeBanner').style.display='none'">✕</button>
+    <br>
+    <button class="chrome-copy-btn" id="chromeCopyBtn" onclick="copyLinkForSafari()">📋 Copy Link to Open in Safari</button>
 </div>
 <div class="container">
 
@@ -2007,6 +2022,27 @@
         if (h === 0) h = 12;
         return `${h}:${m} ${ampm}`;
     }
+    // ---- Chrome on iPhone: copy link for Safari ----
+    function copyLinkForSafari() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            const btn = document.getElementById("chromeCopyBtn");
+            btn.textContent = "✅ Copied! Now open Safari and paste.";
+            setTimeout(() => { btn.textContent = "📋 Copy Link to Open in Safari"; }, 4000);
+        }).catch(() => {
+            // Fallback for older browsers
+            const textarea = document.createElement("textarea");
+            textarea.value = window.location.href;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+            const btn = document.getElementById("chromeCopyBtn");
+            btn.textContent = "✅ Copied! Now open Safari and paste.";
+            setTimeout(() => { btn.textContent = "📋 Copy Link to Open in Safari"; }, 4000);
+        });
+    }
+
     // ---- FAQ toggle ----
     function toggleFAQ() {
         const faqContainer = document.getElementById('faqContainer');
