@@ -80,6 +80,32 @@
             margin-top: 2px;
         }
 
+        /* ===== CHROME BANNER ===== */
+        .chrome-banner {
+            display: none;
+            background: linear-gradient(135deg, #fff3cd, #ffeeba);
+            border-bottom: 2px solid var(--accent-gold);
+            padding: 14px 20px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--gray-800);
+            line-height: 1.5;
+        }
+        .chrome-banner strong {
+            color: var(--blue-dark);
+        }
+        .chrome-banner .chrome-banner-close {
+            display: inline-block;
+            margin-left: 8px;
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: var(--gray-600);
+            vertical-align: middle;
+        }
+        .chrome-banner .chrome-banner-close:hover { color: var(--gray-800); }
+
         /* ===== CONTAINER ===== */
         .container { max-width: 600px; margin: 0 auto; padding: 20px 16px 40px; }
 
@@ -583,6 +609,10 @@
 </div>
 
 <!-- ===== MAIN ===== -->
+<div class="chrome-banner" id="chromeBanner">
+    ⚡ <strong>For the best experience, open Drive Score in Safari.</strong> Chrome on iPhone has a known camera issue.
+    <button class="chrome-banner-close" onclick="document.getElementById('chromeBanner').style.display='none'">✕</button>
+</div>
 <div class="container">
 
     <!-- ========================================== -->
@@ -1001,6 +1031,13 @@
 
     // ---- Set today's date as default ----
     document.addEventListener("DOMContentLoaded", () => {
+        // Detect Chrome on iPhone and show Safari recommendation banner
+        const ua = navigator.userAgent;
+        const isIphone = /iPhone/i.test(ua);
+        const isChrome = /CriOS/i.test(ua); // Chrome on iOS uses "CriOS"
+        if (isIphone && isChrome) {
+            document.getElementById("chromeBanner").style.display = "block";
+        }
         const today = new Date();
         document.getElementById("driveDate").value = today.toISOString().split("T")[0];
         const hh = String(today.getHours()).padStart(2, "0");
