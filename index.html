@@ -713,11 +713,11 @@
 
             <!-- Scan button triggers native camera -->
             <div id="scanArea" class="scan-area" onclick="document.getElementById('scanFile').click()">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <div class="scan-text">Tap to scan form</div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 12px 0;">
                     <img src="WrongScan.png" alt="Wrong way to scan" style="width: 88%; max-width: 340px; height: auto;">
                     <img src="RightScan.png" alt="Right way to scan" style="width: 88%; max-width: 340px; height: auto;">
                 </div>
-                <div class="scan-text">Tap to scan form</div>
                 <div id="scanHint" class="scan-hint"><span style="color: var(--red-soft); font-weight: 800;">IMPORTANT:</span> Turn the phone horizontal and get as close as you can to the name/address/date of birth!</div>
                 <div class="scan-privacy">The scan is only used to read the text. The image is never saved or stored.</div>
             </div>
