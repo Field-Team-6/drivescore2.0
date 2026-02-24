@@ -850,7 +850,7 @@
             ✅ Submit & Scan Next Form
         </button>
 
-        <button type="button" class="btn btn-done" onclick="submitVoterAndFinish()" style="margin-top:8px;">
+        <button type="button" class="btn btn-done" id="submitFinishBtn" onclick="submitVoterAndFinish()" style="margin-top:8px;">
             ✅ Submit & Finish (Last Form)
         </button>
 
@@ -935,14 +935,8 @@
         <div class="card" style="text-align:center; padding: 40px 24px;">
             <div style="font-size: 3rem; margin-bottom: 16px;">🎉</div>
             <div class="card-title" style="justify-content: center; font-size: 1.3rem; margin-bottom: 12px;">Drive Report Complete!</div>
-            <p style="color: var(--gray-600); margin-bottom: 8px;">
-                You submitted <strong id="finalCount">0</strong> voter<span id="finalPlural">s</span> from this drive.
-            </p>
-            <p id="photoThankYou" style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 8px; display: none;">
-                📸 Plus <strong id="photosSentCount">0</strong> photo<span id="photosSentPlural">s</span> — thank you!
-            </p>
-            <p style="color: var(--gray-600); font-size: 0.9rem; margin-bottom: 24px;">
-                That is <strong id="finalCount2">0</strong> more vote<span id="finalPlural2">s</span> for sanity, humanity, and democracy. Thank you for this great work – keep going! 🗳️
+            <p style="color: var(--gray-600); margin-bottom: 24px;">
+                Thank you for doing the work that will literally save the world. Keep going! 🗳️
             </p>
             <button type="button" class="btn btn-continue" onclick="startNewDrive()">
                 🔄 Restart Drive Score
@@ -1514,6 +1508,7 @@
 
         // Disable buttons
         document.getElementById("submitVoterBtn").disabled = true;
+        document.getElementById("submitFinishBtn").disabled = true;
 
         try {
             const response = await fetch(GOOGLE_SCRIPT_URL, {
@@ -1549,6 +1544,7 @@
 
         } finally {
             document.getElementById("submitVoterBtn").disabled = false;
+            document.getElementById("submitFinishBtn").disabled = false;
         }
     }
 
@@ -1605,20 +1601,6 @@
     function showFinalScreen() {
         document.getElementById("step4").classList.add("hidden");
         document.getElementById("step5").classList.remove("hidden");
-        document.getElementById("finalCount").textContent = voterCount;
-        document.getElementById("finalPlural").textContent = voterCount === 1 ? "" : "s";
-        document.getElementById("finalCount2").textContent = voterCount;
-        document.getElementById("finalPlural2").textContent = voterCount === 1 ? "" : "s";
-
-        // Show photo count if any were sent
-        if (totalPhotosSent > 0) {
-            document.getElementById("photoThankYou").style.display = "block";
-            document.getElementById("photosSentCount").textContent = totalPhotosSent;
-            document.getElementById("photosSentPlural").textContent = totalPhotosSent === 1 ? "" : "s";
-        } else {
-            document.getElementById("photoThankYou").style.display = "none";
-        }
-
         window.scrollTo({ top: 0, behavior: "smooth" });
         launchConfetti();
     }
